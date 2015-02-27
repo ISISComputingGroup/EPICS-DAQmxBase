@@ -6,8 +6,14 @@ include $(TOP)/configure/CONFIG
 # Build an Diamond Support Module
 # -------------------------------
 
+ifneq ($(findstring windows,$(EPICS_HOST_ARCH)),)
+DAQMXLIB = $(ICPBINARIESDIR)/NIDAQmxBase/lib/msvc64
+else
+DAQMXLIB = $(ICPBINARIESDIR)/NIDAQmxBase/lib/msvc
+endif
+
 ### USR_INCLUDES += -I$(TOP)/NiBin
-USR_INCLUDES += -I/usr/local/natinst/nidaqmxbase/include
+USR_INCLUDES += -I$(ICPBINARIESDIR)/NIDAQmxBase/include
 
 LIBRARY_IOC += DAQmxBaseSupport
 
@@ -19,13 +25,11 @@ DBD += DAQmxBaseSupport.dbd
 DAQmxBaseSupport_SRCS += drvDaqMxBase.c
 
 # We need to link against the EPICS Base libraries
-DAQmxBaseSupport_LIBS += $(EPICS_BASE_IOC_LIBS)
-USR_LIBS += nidaqmxbase  
-USR_CFLAGS += -Wno-comments
+DAQmxBaseSupport_LIBS += asyn $(EPICS_BASE_IOC_LIBS)
+USR_CFLAGS_Linux += -Wno-comments
+USR_CFLAGS_WIN32 += -D_USE_MATH_DEFINES -DWIN32 -DDllExport=__declspec(dllimport)
 
-### NIBIN = $(TOP)/NiBin
-NIBIN = /usr/local/lib
-nidaqmxbase_DIR = $(NIBIN)
+DAQmxBaseSupport_SYS_LIBS_WIN32 += $(DAQMXLIB)/nidaqmxbase
 
 # ------------------------
 # Build an IOC Application
@@ -62,6 +66,8 @@ DAQmxBase_LIBS += asyn
 
 # We need to link this IOC Application against the EPICS Base libraries
 DAQmxBase_LIBS += $(EPICS_BASE_IOC_LIBS)
+
+DAQmxBase_SYS_LIBS_WIN32 += $(DAQMXLIB)/nidaqmxbase
 
 # ---------------------------------------------------
 

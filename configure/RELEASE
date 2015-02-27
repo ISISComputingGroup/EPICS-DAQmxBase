@@ -14,8 +14,8 @@ TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 #SUPPORT=/dls_sw/prod/R3.14.8.2/support
 SUPPORT=/epics
 
- ASYN=	$(SUPPORT)/asyn
-#ASYN=	$(SUPPORT)/asyn/4-8
+# ASYN=	$(SUPPORT)/asyn
+ASYN=	$(SUPPORT)/asyn/4-26
 
 # EPICS_BASE usually appears last so other apps can override stuff:
 #EPICS_BASE=/home/ulrik/epics/base
@@ -23,3 +23,5 @@ SUPPORT=/epics
 EPICS_BASE=$(SUPPORT)/base
 
 -include $(TOP)/configure/RELEASE.private
+
+include $(TOP)/../../ISIS_CONFIG.$(EPICS_HOST_ARCH)

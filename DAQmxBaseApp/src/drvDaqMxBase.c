@@ -52,6 +52,7 @@
 #include <epicsMessageQueue.h>
 #include <epicsTime.h>
 #include <iocsh.h>
+#include <errlog.h>
 #include <epicsExport.h>
 
 #include <NIDAQmxBase.h>
@@ -66,6 +67,100 @@
 #define DEFAULT_WAIT_DELAY 0.3
 #define MESSAGE_Q_CAPACITY 5
 #define EVENT_DATA 1
+
+#ifdef _WIN32
+
+#include <windows.h>
+
+static char* strsep(char** stringp, const char* delim)
+{
+	char *s;
+	const char *spanp;
+	int c, sc;
+	char *tok;
+
+	if ((s = *stringp) == NULL)
+		return (NULL);
+	for (tok = s;;) {
+		c = *s++;
+		spanp = delim;
+		do {
+			if ((sc = *spanp++) == c) {
+				if (c == 0)
+					s = NULL;
+				else
+					s[-1] = 0;
+				*stringp = s;
+				return (tok);
+			}
+		} while (sc != 0);
+	}
+}
+
+#define CLOCK_REALTIME 0
+
+static LARGE_INTEGER
+getFILETIMEoffset()
+{
+    SYSTEMTIME s;
+    FILETIME f;
+    LARGE_INTEGER t;
+
+    s.wYear = 1970;
+    s.wMonth = 1;
+    s.wDay = 1;
+    s.wHour = 0;
+    s.wMinute = 0;
+    s.wSecond = 0;
+    s.wMilliseconds = 0;
+    SystemTimeToFileTime(&s, &f);
+    t.QuadPart = f.dwHighDateTime;
+    t.QuadPart <<= 32;
+    t.QuadPart |= f.dwLowDateTime;
+    return (t);
+}
+
+static int
+clock_gettime(int X, struct timespec *ts)
+{
+    LARGE_INTEGER           t;
+    FILETIME            f;
+    double                  microseconds;
+    static LARGE_INTEGER    offset;
+    static double           frequencyToMicroseconds;
+    static int              initialized = 0;
+    static BOOL             usePerformanceCounter = 0;
+
+    if (!initialized) {
+        LARGE_INTEGER performanceFrequency;
+        initialized = 1;
+        usePerformanceCounter = QueryPerformanceFrequency(&performanceFrequency);
+        if (usePerformanceCounter) {
+            QueryPerformanceCounter(&offset);
+            frequencyToMicroseconds = (double)performanceFrequency.QuadPart / 1000000.;
+        } else {
+            offset = getFILETIMEoffset();
+            frequencyToMicroseconds = 10.;
+        }
+    }
+    if (usePerformanceCounter) QueryPerformanceCounter(&t);
+    else {
+        GetSystemTimeAsFileTime(&f);
+        t.QuadPart = f.dwHighDateTime;
+        t.QuadPart <<= 32;
+        t.QuadPart |= f.dwLowDateTime;
+    }
+
+    t.QuadPart -= offset.QuadPart;
+    microseconds = (double)t.QuadPart / frequencyToMicroseconds;
+    t.QuadPart = (LONGLONG)microseconds;
+    ts->tv_sec = t.QuadPart / 1000000;
+    ts->tv_nsec = 1000 * (t.QuadPart % 1000000);
+    return (0);
+}
+
+#endif /* _WIN32 */
+
 
 typedef enum {
 	msgNoAction = 0,
@@ -1568,11 +1663,11 @@ void DAQmxGen(char * portName, int Channelnr, char * params)
 	case 1: 
 	    printf("Generating random waveform");
 	    if ((int)values[3] != 0)
-		srandom((int)values[3]);
+		srand((int)values[3]);
 	    tmpi2 = (int)values[2];
 	    tmpf2 = values[0] - values[1]; /* calc span*/
 	    for (i = 0; i < dataSize; i++){
-		value = (random() % tmpi2); /* get a number */
+		value = (rand() % tmpi2); /* get a number */
 		value = value * tmpf2 / tmpi2; /* scale it down into region we use */
 		value = value + values[1]; /*offset added*/
 		func[i] = func[i] + value;
@@ -1681,12 +1776,12 @@ void DAQmxGen(char * portName, int Channelnr, char * params)
 	case 8:
 	    printf("Generating smooth random");
 	    if ((int)values[3] != 0)
-		srandom((int)values[3]);
+		srand((int)values[3]);
 	    value = 0;
 	    for (i = 0; i < dataSize; i++)
 	    {
 		func[i] = func[i] + value;
-		tmpf4 = ((epicsFloat64)(random() % 1000) * values[2]/ 500.0);
+		tmpf4 = ((epicsFloat64)(rand() % 1000) * values[2]/ 500.0);
 		tmpf4 = tmpf4 - values[2];
 		value = value + tmpf4;
 		if (value >= values[0])
