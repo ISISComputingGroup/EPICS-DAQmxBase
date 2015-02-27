@@ -55,7 +55,54 @@
 #include <errlog.h>
 #include <epicsExport.h>
 
+#define DAQMXCONFIG MXBASE "Config"
+#define DAQMXRESET MXBASE "Reset"
+#define	DAQMXCHANGEDEVICENAME MXBASE "ChangeDeviceName"
+#define DAQMXPORTOPTIONS MXBASE "PortOptions"
+#define DAQMXGEN MXBASE "Gen"
+#define DAQMXGENP MXBASE "GenP"
+#define DAQMXTRIGGER MXBASE "Trigger"
+#define DAQMXSTART MXBASE "Start"
+
+#ifndef DODAQMXFULL
+#define MXBASE "DAQmxBase"
 #include <NIDAQmxBase.h>
+#else
+#define MXBASE "DAQmx"
+#include <NIDAQmx.h>
+
+#define DAQmxBaseRegistrar DAQmxRegistrar
+
+#define DAQmxBaseResetDevice DAQmxResetDevice
+#define DAQmxBaseGetExtendedErrorInfo DAQmxGetExtendedErrorInfo
+#define DAQmxBaseCreateTask DAQmxCreateTask
+#define DAQmxBaseStopTask DAQmxStopTask
+#define DAQmxBaseClearTask DAQmxClearTask
+#define DAQmxBaseCreateAIVoltageChan DAQmxCreateAIVoltageChan
+#define DAQmxBaseCreateAOVoltageChan DAQmxCreateAOVoltageChan
+#define DAQmxBaseCreateDIChan DAQmxCreateDIChan
+#define DAQmxBaseCreateDOChan DAQmxCreateDOChan
+#define DAQmxBaseCreateCIPeriodChan DAQmxCreateCIPeriodChan
+#define DAQmxBaseCreateCICountEdgesChan DAQmxCreateCICountEdgesChan
+#define DAQmxBaseCreateCIPulseWidthChan DAQmxCreateCIPulseWidthChan
+#define DAQmxBaseCreateCOPulseChanFreq DAQmxCreateCOPulseChanFreq
+#define DAQmxBaseCfgImplicitTiming DAQmxCfgImplicitTiming
+#define DAQmxBaseCfgSampClkTiming DAQmxCfgSampClkTiming
+#define DAQmxBaseCfgInputBuffer DAQmxCfgInputBuffer
+#define DAQmxBaseCfgAnlgEdgeRefTrig DAQmxCfgAnlgEdgeRefTrig
+#define DAQmxBaseCfgAnlgEdgeStartTrig DAQmxCfgAnlgEdgeStartTrig
+#define DAQmxBaseCfgDigEdgeRefTrig DAQmxCfgDigEdgeRefTrig
+#define DAQmxBaseCfgDigEdgeStartTrig  DAQmxCfgDigEdgeStartTrig
+#define DAQmxBaseStartTask DAQmxStartTask
+#define DAQmxBaseReadAnalogF64 DAQmxReadAnalogF64
+#define DAQmxBaseReadDigitalU32 DAQmxReadDigitalU32
+#define DAQmxBaseReadCounterF64 DAQmxReadCounterF64
+#define DAQmxBaseReadCounterScalarF64 DAQmxReadCounterScalarF64
+#define DAQmxBaseReadCounterScalarU32 DAQmxReadCounterScalarU32
+#define DAQmxBaseReadCounterU32 DAQmxReadCounterU32
+#define DAQmxBaseWriteAnalogF64 DAQmxWriteAnalogF64
+#define DAQmxBaseWriteDigitalU32 DAQmxWriteDigitalU32
+#endif
 
 /* various useful enumeration declarations */
 #define DEFAULT_SAMPLE_RATE 10000.0
@@ -515,7 +562,7 @@ static asynDrvUser dmbDrvUser = {
   Simply sends a start message
   (only if needed)
  */
-int SendStart(daqMxBasePvt *pPvt)
+static int SendStart(daqMxBasePvt *pPvt)
 {
     daqMxBaseMessage msg = msgStart;
     
@@ -1412,7 +1459,7 @@ static asynStatus dmbRead(	void *drvPvt, asynUser *pasynUser,
 static char * PrevGenPort;
 static int PrevGenChan;
 
-void DAQmxGenDig(daqMxBasePvt *pPvt, int Channelnr, char * params)
+static void DAQmxGenDig(daqMxBasePvt *pPvt, int Channelnr, char * params)
 {
     int dataSize;
     int i;
@@ -1444,7 +1491,7 @@ void DAQmxGenDig(daqMxBasePvt *pPvt, int Channelnr, char * params)
 }
 
 
-void DAQmxGen(char * portName, int Channelnr, char * params)
+static void DAQmxGen(char * portName, int Channelnr, char * params)
 {
     char * token;
     daqMxBasePvt * pPvt; 
@@ -1890,7 +1937,7 @@ void DAQmxGen(char * portName, int Channelnr, char * params)
 
 }
 
-void DAQmxGenP(char * params)
+static void DAQmxGenP(char * params)
 {
     if (!PrevGenPort)
     {
@@ -1901,7 +1948,7 @@ void DAQmxGenP(char * params)
 }
 
 
-void DAQepicsExitFunc(void * param)
+static void DAQepicsExitFunc(void * param)
 {
     /* */
     daqMxBaseMessage msg = msgStop;
@@ -1930,7 +1977,8 @@ void DAQepicsExitFunc(void * param)
     asynPrint( pPvt->pasynUser, ASYN_TRACE_FLOW, "NI stopped (portname=%s)\n",pPvt->portName);
 
 }
-int DAQmxReset(char * devicename)
+
+static int DAQmxReset(char * devicename)
 {
     daqMxBasePvt *pPvt = NULL;
     daqMxBaseMessage msg = msgConfigure;
@@ -1965,7 +2013,7 @@ int DAQmxReset(char * devicename)
     
 }
 
-daqMxBasePvt *getAsynPort(char *portName )
+static daqMxBasePvt *getAsynPort(char *portName )
 {
 
 	daqMxBasePvt *pPvt;
@@ -2455,7 +2503,7 @@ static asynStatus allocBuffers(daqMxBasePvt *pPvt, asynUser *pasynUser)
 }
 
 
-int PortOptions(daqMxBasePvt *pPvt, int Channelnr, char * options)
+static int PortOptions(daqMxBasePvt *pPvt, int Channelnr, char * options)
 {
     char * token;
 
@@ -2646,7 +2694,7 @@ int PortOptions(daqMxBasePvt *pPvt, int Channelnr, char * options)
     return 0;
 }
 
-void DAQmxPortOptions(char * portName, int Channelnr, char * options)
+static void DAQmxPortOptions(char * portName, int Channelnr, char * options)
 {
     daqMxBasePvt * pPvt; 
     
@@ -2691,7 +2739,8 @@ void DAQmxPortOptions(char * portName, int Channelnr, char * options)
     epicsMutexUnlock(pPvt->lock);
 
 }
-int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, char * sacqType, char* options)
+
+static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, char * sacqType, char* options)
 {
         int acqType;
 	daqMxBasePvt * pPvt; 
@@ -2870,7 +2919,7 @@ int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, char * sac
 	return 0;
 }
 
-void DAQmxTrigger(char * portName, char *triggersource, char * options)
+static void DAQmxTrigger(char * portName, char *triggersource, char * options)
 {
     daqMxBasePvt * pPvt; 
     
@@ -2918,7 +2967,7 @@ void DAQmxTrigger(char * portName, char *triggersource, char * options)
 
 }
 
-void DAQmxChangeDeviceName(char * portName, int channelnr, char * newdevicename)
+static void DAQmxChangeDeviceName(char * portName, int channelnr, char * newdevicename)
 {
     daqMxBasePvt * pPvt; 
     
@@ -3003,7 +3052,8 @@ void DAQmxChangeDeviceName(char * portName, int channelnr, char * newdevicename)
     epicsMutexUnlock(pPvt->lock);
 
 }
-void DAQmxStart(char * portName)
+
+static void DAQmxStart(char * portName)
 {
     daqMxBasePvt * pPvt; 
     
@@ -3027,7 +3077,7 @@ void DAQmxStart(char * portName)
 	
 }
 
-asynStatus SoftTrigger(daqMxBasePvt *pPvt)
+static asynStatus SoftTrigger(daqMxBasePvt *pPvt)
 {
     asynStatus result = asynError;
     int pos = 0;
@@ -3110,7 +3160,7 @@ asynStatus SoftTrigger(daqMxBasePvt *pPvt)
 }
 
 
-void daqThread(void *param)
+static void daqThread(void *param)
 {
 	daqMxBasePvt * pPvt = (daqMxBasePvt *)param;
 	/*epicsFloat64* d;*/
@@ -4363,9 +4413,6 @@ void daqThread(void *param)
 	}
 }
 
-
-	
-
 static const iocshArg DAQmxBaseConfigArg0 = {"portName", iocshArgString};
 static const iocshArg DAQmxBaseConfigArg1 = {"deviceName", iocshArgString};
 static const iocshArg DAQmxBaseConfigArg2 = {"Channelnr", iocshArgInt};
@@ -4376,51 +4423,51 @@ static const iocshArg * const DAQmxBaseConfigArgs[] = {	&DAQmxBaseConfigArg0,
 								&DAQmxBaseConfigArg2,
 								&DAQmxBaseConfigArg3,
 								&DAQmxBaseConfigArg4};
-static const iocshFuncDef DAQmxBaseConfigFuncDef = {"DAQmxBaseConfig", 5, DAQmxBaseConfigArgs};
+static const iocshFuncDef DAQmxBaseConfigFuncDef = { DAQMXCONFIG, 5, DAQmxBaseConfigArgs};
 
 
 static const iocshArg DAQmxResetArg0 = {"deviceName",iocshArgString};
 static const iocshArg * const DAQmxResetArgs[] = {&DAQmxResetArg0};
-static const iocshFuncDef DAQmxResetFuncDef = {"DAQmxReset",1,DAQmxResetArgs};
+static const iocshFuncDef DAQmxResetFuncDef = {DAQMXRESET,1,DAQmxResetArgs};
 
 static const iocshArg DAQmxChangeDeviceNameArg0 = {"portName",iocshArgString};
 static const iocshArg DAQmxChangeDeviceNameArg1 = {"Channelnr",iocshArgInt};
 static const iocshArg DAQmxChangeDeviceNameArg2 = {"newdeviceName",iocshArgString};
 static const iocshArg * const DAQmxChangeDeviceNameArgs[] = {&DAQmxChangeDeviceNameArg0,&DAQmxChangeDeviceNameArg1,&DAQmxChangeDeviceNameArg2};
-static const iocshFuncDef DAQmxChangeDeviceNameFuncDef = {"DAQmxChangeDeviceName",3,DAQmxChangeDeviceNameArgs};
+static const iocshFuncDef DAQmxChangeDeviceNameFuncDef = {DAQMXCHANGEDEVICENAME,3,DAQmxChangeDeviceNameArgs};
 
 static const iocshArg DAQmxPortOptionsArg0 = {"portName",iocshArgString};
 static const iocshArg DAQmxPortOptionsArg1 = {"Channelnr",iocshArgInt};
 static const iocshArg DAQmxPortOptionsArg2 = {"options",iocshArgString};
 static const iocshArg * const DAQmxPortOptionsArgs[] = { &DAQmxPortOptionsArg0, &DAQmxPortOptionsArg1, &DAQmxPortOptionsArg2};
-static const iocshFuncDef DAQmxPortOptionsFuncDef = {"DAQmxPortOptions",3,DAQmxPortOptionsArgs};
+static const iocshFuncDef DAQmxPortOptionsFuncDef = {DAQMXPORTOPTIONS,3,DAQmxPortOptionsArgs};
 
 
 static const iocshArg DAQmxGenArg0 = {"portName",iocshArgString};
 static const iocshArg DAQmxGenArg1 = {"Channelnr",iocshArgInt};
 static const iocshArg DAQmxGenArg2 = {"params",iocshArgString};
 static const iocshArg * const DAQmxGenArgs[] = {&DAQmxGenArg0, &DAQmxGenArg1, &DAQmxGenArg2};
-static const iocshFuncDef DAQmxGenFuncDef = {"DAQmxGen",3,DAQmxGenArgs};
+static const iocshFuncDef DAQmxGenFuncDef = {DAQMXGEN,3,DAQmxGenArgs};
 
 static const iocshArg DAQmxGenPArg0 = {"params",iocshArgString};
 static const iocshArg * const DAQmxGenPArgs[] = {&DAQmxGenArg0};
-static const iocshFuncDef DAQmxGenPFuncDef = {"DAQmxGenP",1,DAQmxGenPArgs};
+static const iocshFuncDef DAQmxGenPFuncDef = {DAQMXGENP,1,DAQmxGenPArgs};
 
 static const iocshArg DAQmxTriggerArg0 = {"portName",iocshArgString};
 static const iocshArg DAQmxTriggerArg1 = {"triggerSource",iocshArgString};
 static const iocshArg DAQmxTriggerArg2 = {"triggerOptions",iocshArgString};
 static const iocshArg * const DAQmxTriggerArgs[] = {&DAQmxTriggerArg0,&DAQmxTriggerArg1,&DAQmxTriggerArg2};
-static const iocshFuncDef DAQmxTriggerFuncDef = {"DAQmxTrigger",3,DAQmxTriggerArgs};
+static const iocshFuncDef DAQmxTriggerFuncDef = {DAQMXTRIGGER,3,DAQmxTriggerArgs};
 
 static const iocshArg DAQmxStartArg0 = {"portName" , iocshArgString};
 static const iocshArg * const DAQmxStartArgs[] = {&DAQmxStartArg0};
-static const iocshFuncDef DAQmxStartFuncDef = {"DAQmxStart",1,DAQmxStartArgs};
+static const iocshFuncDef DAQmxStartFuncDef = { DAQMXSTART,1,DAQmxStartArgs};
 
 static void DAQmxBaseConfigCallFunc(const iocshArgBuf *args)
 {
     if (DAQmxBaseConfig( args[0].sval, args[1].sval, args[2].ival, args[3].sval,args[4].sval) != 0)
     {
-	printf("### ERROR - DAQmxBaseConfig Failed!!\n");
+	printf("### ERROR - " DAQMXCONFIG " Failed!!\n");
     }
 }
 static void DAQmxResetCallFunc(const iocshArgBuf *args)
@@ -4457,7 +4504,7 @@ static void epicsShareAPI DAQmxBaseRegistrar(void)
     PrevGenPort = NULL;
     PrevGenChan = 0;
 
-    	iocshRegister(&DAQmxBaseConfigFuncDef, DAQmxBaseConfigCallFunc);
+    iocshRegister(&DAQmxBaseConfigFuncDef, DAQmxBaseConfigCallFunc);
 	iocshRegister(&DAQmxResetFuncDef, DAQmxResetCallFunc);
 	iocshRegister(&DAQmxChangeDeviceNameFuncDef, DAQmxChangeDeviceNameFunc);
 	iocshRegister(&DAQmxPortOptionsFuncDef, DAQmxPortOptionsFunc);
