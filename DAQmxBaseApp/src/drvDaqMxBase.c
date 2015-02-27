@@ -55,15 +55,8 @@
 #include <errlog.h>
 #include <epicsExport.h>
 
-#define DAQMXCONFIG MXBASE "Config"
-#define DAQMXRESET MXBASE "Reset"
-#define	DAQMXCHANGEDEVICENAME MXBASE "ChangeDeviceName"
-#define DAQMXPORTOPTIONS MXBASE "PortOptions"
-#define DAQMXGEN MXBASE "Gen"
-#define DAQMXGENP MXBASE "GenP"
-#define DAQMXTRIGGER MXBASE "Trigger"
-#define DAQMXSTART MXBASE "Start"
-
+// The MXBASE macro can be used to construct names of iocsh commands and for use
+// in output strings to distinguish if we afre using base of full DAQmx
 #ifndef DODAQMXFULL
 #define MXBASE "DAQmxBase"
 #include <NIDAQmxBase.h>
@@ -71,8 +64,10 @@
 #define MXBASE "DAQmx"
 #include <NIDAQmx.h>
 
+// this is the only function we define that gets a non-static version created by the epeics export process, hence must be unique 
 #define DAQmxBaseRegistrar DAQmxRegistrar
 
+// swap names for full DAQmx
 #define DAQmxBaseResetDevice DAQmxResetDevice
 #define DAQmxBaseGetExtendedErrorInfo DAQmxGetExtendedErrorInfo
 #define DAQmxBaseCreateTask DAQmxCreateTask
@@ -103,6 +98,16 @@
 #define DAQmxBaseWriteAnalogF64 DAQmxWriteAnalogF64
 #define DAQmxBaseWriteDigitalU32 DAQmxWriteDigitalU32
 #endif
+
+// Construct names for the IOCSH commands
+#define DAQMXCONFIG MXBASE "Config"
+#define DAQMXRESET MXBASE "Reset"
+#define	DAQMXCHANGEDEVICENAME MXBASE "ChangeDeviceName"
+#define DAQMXPORTOPTIONS MXBASE "PortOptions"
+#define DAQMXGEN MXBASE "Gen"
+#define DAQMXGENP MXBASE "GenP"
+#define DAQMXTRIGGER MXBASE "Trigger"
+#define DAQMXSTART MXBASE "Start"
 
 /* various useful enumeration declarations */
 #define DEFAULT_SAMPLE_RATE 10000.0
@@ -2221,7 +2226,7 @@ static daqMxBasePvt *getAsynPort(char *portName )
 		pPvt->msgQid = epicsMessageQueueCreate( MESSAGE_Q_CAPACITY, sizeof(daqMxBaseMessage));
 		
 		/* create the data acquisition thread here the thread will start in iocinit */
-		sprintf(threadName, "DAQmx-%s", pPvt->portName);
+		sprintf(threadName, MXBASE "-%s", pPvt->portName);
 		threadStackSize = epicsThreadGetStackSize(mediumStack);
 		pPvt->threadId = epicsThreadCreate(	threadName, 
 											epicsThreadPriorityLow, 
