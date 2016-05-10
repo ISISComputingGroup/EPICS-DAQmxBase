@@ -5,6 +5,5 @@ Local modifications to:
 - Build against NI-DAQmx as well as NI-DAQmxBase
 
 The Makefile as is will try to build separate libraries each linked against either 
-NI-DAQmxBase and NI-DAQmx, you probably don't want (or have) both installed, so 
+NI-DAQmxBase or NI-DAQmx; you probably don't want (or have) both installed, so 
 comment out as appropriate.
-   
