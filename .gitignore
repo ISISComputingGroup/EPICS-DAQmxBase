@@ -4,6 +4,7 @@ O.*/
 /dbd
 /include
 /lib
+/data
 /templates
 envPaths
 cdCommands
