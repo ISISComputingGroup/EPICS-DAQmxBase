@@ -1,11 +1,9 @@
 
-
-
-
-record(longin, "$(DAQMX):DATA"){
+record(longin, "$(DAQMX):$(PORT)$(CHAN):DATA"){
   field(SCAN,".1 second")
+#  field(SCAN,"5 second")
   field(DTYP, "asynInt32" )
-  field(INP, "@asyn(myport1, 0, 5.0) DATA")
+  field(INP, "@asyn($(PORT), $(CHAN), 5.0) DATA")
 }
 
 

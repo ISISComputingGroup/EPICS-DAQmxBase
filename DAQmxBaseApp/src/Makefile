@@ -8,13 +8,19 @@ include $(TOP)/configure/CONFIG
 
 ifneq ($(findstring windows,$(EPICS_HOST_ARCH)),)
 DAQMXLIB = $(ICPBINARYDIR)/NIDAQmx/lib/msvc64
-DAQMXBASELIB = $(ICPBINARYDIR)/NIDAQmxBase/lib/msvc64
+#DAQMXBASELIB = $(ICPBINARYDIR)/NIDAQmxBase/lib/msvc64
 else
 DAQMXLIB = $(ICPBINARYDIR)/NIDAQmx/lib/msvc
 DAQMXBASELIB = $(ICPBINARYDIR)/NIDAQmxBase/lib/msvc
 endif
 
-LIBRARY_IOC += DAQmxBaseSupport DAQmxSupport
+ifdef DAQMXLIB
+LIBRARY_IOC += DAQmxSupport
+endif
+
+ifdef DAQMXBASELIB
+LIBRARY_IOC += DAQmxBaseSupport
+endif
 
 drvDaqMxBase_INCLUDES += -I$(ICPBINARYDIR)/NIDAQmxBase/include
 
@@ -43,7 +49,15 @@ DAQmxSupport_SYS_LIBS_WIN32 += $(DAQMXLIB)/NIDAQmx
 # Build an IOC Application
 # ------------------------
 
-PROD_IOC = DAQmxBase DAQmx
+ifdef DAQMXLIB
+PROD_IOC += DAQmx
+DBD += DAQmx.dbd
+endif
+
+ifdef DAQMXBASELIB
+PROD_IOC += DAQmxBase
+DBD += DAQmxBase.dbd
+endif
 
 # DAQmxBase.dbd will be installed into <top>/dbd
 DBD += DAQmxBase.dbd DAQmx.dbd
@@ -66,7 +80,7 @@ DAQmx_SRCS += DAQmx_registerRecordDeviceDriver.cpp
 DAQmxBase_SRCS_DEFAULT += DAQmxBaseMain.cpp
 DAQmxBase_SRCS_vxWorks += -nil-
 
-DAQmx_SRCS_DEFAULT += DAQmxBaseMain.cpp
+DAQmx_SRCS_DEFAULT += DAQmxMain.cpp
 DAQmx_SRCS_vxWorks += -nil-
 
 # Add locally compiled object code
@@ -94,6 +108,3 @@ DAQmx_SYS_LIBS_WIN32 += $(DAQMXLIB)/NIDAQmx
 # ---------------------------------------------------
 
 include $(TOP)/configure/RULES
-
-drvDaqMx.c : ../drvDaqMxBase.c
-	$(CP) $< $@

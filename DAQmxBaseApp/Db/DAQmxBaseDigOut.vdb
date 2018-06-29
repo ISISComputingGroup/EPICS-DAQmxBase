@@ -1,12 +1,6 @@
 
 
-
-
-record(mbbo, "$(DAQMX):DATA"){
+record(mbbo, "$(DAQMX):$(PORT)$(CHAN):DATA"){
   field(DTYP, "asynInt32" )
-  field(OUT, "@asyn(myport1, 0, 5.0) DATA")
+  field(OUT, "@asyn($(PORT), $(CHAN), 5.0)DATA")
 }
-
-
-
-
