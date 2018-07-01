@@ -19,6 +19,7 @@ include $(TOP)/configure/CONFIG
 # template files like this
 #
 DB += DAQmxBase.vdb
+DB += DAQmxBaseControl.vdb
 DB += DAQmxBaseI.vdb
 DB += DAQmxBaseO.vdb
 DB += DAQmxBaseScan.vdb

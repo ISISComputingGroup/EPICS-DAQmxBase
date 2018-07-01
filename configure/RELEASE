@@ -1,4 +1,5 @@
 ASYN=$(SUPPORT)/asyn/master
+ONCRPC=$(SUPPORT)/oncrpc/master
 DAQMXBASE=$(SUPPORT)/DAQmxBase/master
 
 # optional extra local definitions here
