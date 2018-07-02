@@ -4436,7 +4436,7 @@ static void daqThread(void *param)
             /* late start:
                Needed for write stuff
              */
-            if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
+            if ( !autoStartWriteTask && DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)) )
             {
                 DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
                 asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
