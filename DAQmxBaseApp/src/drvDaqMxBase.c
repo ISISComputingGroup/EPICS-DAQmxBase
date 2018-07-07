@@ -89,6 +89,7 @@
 #define DAQmxBaseCfgDigEdgeRefTrig DAQmxCfgDigEdgeRefTrig
 #define DAQmxBaseCfgDigEdgeStartTrig  DAQmxCfgDigEdgeStartTrig
 #define DAQmxBaseStartTask DAQmxStartTask
+#define DAQmxBaseIsTaskDone DAQmxIsTaskDone
 #define DAQmxBaseReadAnalogF64 DAQmxReadAnalogF64
 #define DAQmxBaseReadDigitalU32 DAQmxReadDigitalU32
 #define DAQmxBaseReadCounterF64 DAQmxReadCounterF64
@@ -3252,6 +3253,7 @@ static void daqThread(void *param)
     int32 direction;
     int32 tmpSamplesRead;
 	bool32 autoStartWriteTask = TRUE;
+    bool32 taskDone;
     /*bool32 boolresult;*/
     int  ch, reason, signal;
     daqMxBaseMessage msg;
@@ -4451,8 +4453,12 @@ static void daqThread(void *param)
                 asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                     "port %s: Write - didn't write all requested samples %d != %d\n", pPvt->portName, pPvt->samplesRead, pPvt->nSamples);
             }
-            DAQmxWaitUntilTaskDone(pPvt->taskHandle, DAQmx_Val_WaitInfinitely);
 
+            while( !DAQmxFailed(DAQmxBaseIsTaskDone(pPvt->taskHandle, &taskDone)) && !taskDone )
+            {
+                epicsThreadSleep(0.01);
+            }
+            
             break;
 
         case counterout:
