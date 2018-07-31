@@ -1,0 +1,18 @@
+record(longin, "$(DAQMX):$(PORT)$(CHAN):DATA"){
+  field(DTYP, "Soft Channel" )
+  field(INP, "$(DAQMX):$(PORT)$(CHAN):DATA_.B0 CP")
+}
+
+record(mbbiDirect, "$(DAQMX):$(PORT)$(CHAN):DATA_"){
+  field(DTYP, "asynUInt32Digital" )
+  field(SCAN,".1 second")
+#  field(SCAN,"5 second")
+  field(INP, "@asynMask($(PORT), $(CHAN), 16, 5.0) DATA")
+  field(SHFT, $(SHFT=0))
+  field(SIML, "$(DAQMX):SIMULATE")
+  field(SIOL, "$(DAQMX):$(PORT)$(CHAN):DATA:SIM")
+}
+
+record(longin, "$(DAQMX):$(PORT)$(CHAN):DATA:SIM"){
+  field(DESC, "Input data for RECSIM")
+}

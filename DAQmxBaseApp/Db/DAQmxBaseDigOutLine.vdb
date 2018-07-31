@@ -1,0 +1,16 @@
+record(longout, "$(DAQMX):$(PORT)$(CHAN):DATA"){
+  field(DTYP, "Soft Channel" )
+  field(OUT, "$(DAQMX):$(PORT)$(CHAN):DATA_.B0 PP")
+}
+
+record(mbboDirect, "$(DAQMX):$(PORT)$(CHAN):DATA_"){
+  field(DTYP, "asynUInt32Digital" )
+  field(OUT, "@asynMask($(PORT), $(CHAN), 16, 5.0)DATA")
+  field(SHFT, $(SHFT=0))
+  field(SIML, "$(DAQMX):SIMULATE")
+  field(SIOL, "$(DAQMX):$(PORT)$(CHAN):DATA:SIM PP")
+}
+
+record(longout, "$(DAQMX):$(PORT)$(CHAN):DATA:SIM"){
+    field(DESC, "Output data for RECSIM")
+}
