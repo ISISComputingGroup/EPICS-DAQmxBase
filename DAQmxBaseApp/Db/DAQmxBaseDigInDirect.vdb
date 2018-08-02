@@ -1,10 +1,13 @@
 
+## hardware value is right shifted by SHFT bits after being read
 record(mbbiDirect, "$(DAQMX):$(PORT)$(CHAN):DATA"){
   field(SIML, "$(DAQMX):SIMULATE")
   field(SCAN,".1 second")
 #  field(SCAN,"5 second")
   field(DTYP, "asynUInt32Digital" )
-  field(INP, "@asynMask($(PORT), $(CHAN), 16, 5.0) DATA")
+  field(INP, "@asynMask($(PORT), $(CHAN), $(NBITS=16), 5.0) DATA")
+  field(NOBT, $(NBITS=0))
+  field(SHFT, $(SHFT=0))
   field(SIOL,"$(DAQMX):$(PORT)$(CHAN):DATA:SIM")
 }
 

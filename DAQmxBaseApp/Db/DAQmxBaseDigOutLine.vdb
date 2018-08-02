@@ -1,8 +1,10 @@
+## should ony be 0 or 1
 record(longout, "$(DAQMX):$(PORT)$(CHAN):DATA"){
   field(DTYP, "Soft Channel" )
   field(OUT, "$(DAQMX):$(PORT)$(CHAN):DATA_.B0 PP")
 }
 
+## value is left shifted by SHFT before writing to hardware
 record(mbboDirect, "$(DAQMX):$(PORT)$(CHAN):DATA_"){
   field(DTYP, "asynUInt32Digital" )
   field(OUT, "@asynMask($(PORT), $(CHAN), 16, 5.0)DATA")
@@ -11,6 +13,7 @@ record(mbboDirect, "$(DAQMX):$(PORT)$(CHAN):DATA_"){
   field(SIOL, "$(DAQMX):$(PORT)$(CHAN):DATA:SIM PP")
 }
 
+## should ony be 0 or 1
 record(longout, "$(DAQMX):$(PORT)$(CHAN):DATA:SIM"){
     field(DESC, "Output data for RECSIM")
 }

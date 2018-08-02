@@ -1,8 +1,10 @@
+## should ony be 1 or 0
 record(longin, "$(DAQMX):$(PORT)$(CHAN):DATA"){
   field(DTYP, "Soft Channel" )
   field(INP, "$(DAQMX):$(PORT)$(CHAN):DATA_.B0 CP")
 }
 
+## hardware value is right shifted by SHFT bits after being read
 record(mbbiDirect, "$(DAQMX):$(PORT)$(CHAN):DATA_"){
   field(DTYP, "asynUInt32Digital" )
   field(SCAN,".1 second")
@@ -13,6 +15,7 @@ record(mbbiDirect, "$(DAQMX):$(PORT)$(CHAN):DATA_"){
   field(SIOL, "$(DAQMX):$(PORT)$(CHAN):DATA:SIM")
 }
 
+## should ony be 1 or 0
 record(longin, "$(DAQMX):$(PORT)$(CHAN):DATA:SIM"){
   field(DESC, "Input data for RECSIM")
 }
