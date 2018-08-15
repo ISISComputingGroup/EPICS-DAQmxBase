@@ -1,11 +1,18 @@
+record(calc, "$(DAQMX):$(PORT)$(CHAN):DATA") {
+    field(INPA, "$(DAQMX):$(PORT)$(CHAN):DATA:_RAW CP MS")
+    field(CALC, "A=0?0:1")
+}
 
-record(longin, "$(DAQMX):$(PORT)$(CHAN):DATA"){
+
+record(longin, "$(DAQMX):$(PORT)$(CHAN):DATA:_RAW"){
+  field(SIML, "$(DAQMX):SIMULATE")
   field(SCAN,".1 second")
 #  field(SCAN,"5 second")
   field(DTYP, "asynInt32" )
   field(INP, "@asyn($(PORT), $(CHAN), 5.0) DATA")
+  field(SIOL,"$(DAQMX):$(PORT)$(CHAN):DATA:SIM")
 }
 
-
-
-
+record(longin, "$(DAQMX):$(PORT)$(CHAN):DATA:SIM"){
+    field(DESC, "Input data for RECSIM")
+}

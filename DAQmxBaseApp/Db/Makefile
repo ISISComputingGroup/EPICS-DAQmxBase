@@ -24,8 +24,12 @@ DB += DAQmxBaseI.vdb
 DB += DAQmxBaseO.vdb
 DB += DAQmxBaseScan.vdb
 DB += DAQmxBaseDigOut.vdb
+DB += DAQmxBaseDigOutLine.vdb
 DB += DAQmxBaseDigIn.vdb
+DB += DAQmxBaseDigInLine.vdb
+DB += DAQmxBaseDigInDirect.vdb
 DB += DAQmxBaseCnt.vdb
+DB += DAQmxBaseIOC.vdb
 #DB += BL06I-MO-IOC-01_sim.db
 
 

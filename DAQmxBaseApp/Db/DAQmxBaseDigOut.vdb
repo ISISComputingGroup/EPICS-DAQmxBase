@@ -1,6 +1,17 @@
+record(calcout, "$(DAQMX):$(PORT)$(CHAN):DATA"){
+  field(CALC, "A=0?0:$(WVAL)")
+  field(OUT, "$(DAQMX):$(PORT)$(CHAN):DATA:_RAW")
+  field(OOPT, "Every Time")
+}
 
 
-record(mbbo, "$(DAQMX):$(PORT)$(CHAN):DATA"){
+record(mbbo, "$(DAQMX):$(PORT)$(CHAN):DATA:_RAW"){
   field(DTYP, "asynInt32" )
   field(OUT, "@asyn($(PORT), $(CHAN), 5.0)DATA")
+  field(SIML, "$(DAQMX):SIMULATE")
+  field(SIOL, "$(DAQMX):$(PORT)$(CHAN):DATA:SIM PP")
+}
+
+record(mbbo, "$(DAQMX):$(PORT)$(CHAN):DATA:SIM"){
+    field(DESC, "Output data for RECSIM")
 }

@@ -1,0 +1,8 @@
+
+record(bi, "$(DAQMX):SIMULATE") {
+  field(DESC, "Enable RECSIM")
+  field(ZNAM, "NO")
+  field(ONAM, "YES")
+  field(VAL, "$(RECSIM=0)")
+}
+
