@@ -1,6 +1,6 @@
 record(calcout, "$(DAQMX):$(PORT)$(CHAN):DATA"){
   field(CALC, "A=0?0:$(WVAL)")
-  field(OUT, "$(DAQMX):$(PORT)$(CHAN):DATA:_RAW")
+  field(OUT, "$(DAQMX):$(PORT)$(CHAN):DATA:_RAW PP")
   field(OOPT, "Every Time")
 }
 
