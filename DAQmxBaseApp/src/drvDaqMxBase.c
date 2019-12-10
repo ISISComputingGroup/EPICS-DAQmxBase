@@ -756,6 +756,7 @@ static asynStatus int32ArrayRead(void *drvPvt, asynUser *pasynUser,
         if (epicsEventWaitWithTimeout(pPvt->polldone, 5.0) != epicsEventWaitOK) {
             asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                 "### ERROR: polldone event timeout after 5 secs (Maybe something stalled?)\n");
+            return(asynTimeout);
         }
     }
     if (maxNElements > pPvt->nSamples)
@@ -890,6 +891,7 @@ static asynStatus float64ArrayRead(void *drvPvt, asynUser *pasynUser,
         if (epicsEventWaitWithTimeout(pPvt->polldone, 5.0) != epicsEventWaitOK) {
             asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                 "### ERROR: polldone event timeout after 5 secs (Maybe something stalled?)\n");
+            return(asynTimeout);
         }
     }
     if (maxNElements > pPvt->aioPvt[signal]->dataSize)
@@ -1300,6 +1302,7 @@ static asynStatus ReadOne(daqMxBasePvt *pPvt, asynUser *pasynUser, int signal, e
         if (epicsEventWaitWithTimeout(pPvt->polldone, 5.0) != epicsEventWaitOK) {
             asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                 "### ERROR: polldone event timeout after 5 secs (Maybe something stalled?)\n");
+            return(asynTimeout);
         }
     }
 
