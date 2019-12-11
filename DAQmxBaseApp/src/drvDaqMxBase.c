@@ -117,7 +117,7 @@
 #define DEFAULT_NSAMPLES 1000
 #define DEFAULT_TIMEOUT 5.0
 #define DEFAULT_DMA_BUF 128
-#define DEFAULT_WAIT_DELAY 0.3
+#define DEFAULT_WAIT_DELAY 1000.0
 #define MESSAGE_Q_CAPACITY 5
 #define EVENT_DATA 1
 
@@ -3403,8 +3403,10 @@ static void daqThread(void *param)
         {
         case unconfigured:
             /*epicsThreadSleep(DEFAULT_WAIT_DELAY);*/
-            epicsEventWaitWithTimeout(pPvt->msgEvent, DEFAULT_WAIT_DELAY);
+            epicsEventWaitWithTimeout(pPvt->msgEvent, 1000);
 
+                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
+                    "### DAQmx ERROR (unconfigured)\n");
             break;
         case reconfigure:
             DAQmxBaseStopTask(pPvt->taskHandle); /* just for safety*/
@@ -3796,8 +3798,9 @@ static void daqThread(void *param)
                 {
                     DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
                     asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (StartTask): %s\n", pPvt->daqMxErrBuf);
+                        "### 1DAQmx ERROR (StartTask): %s\n", pPvt->daqMxErrBuf);
                     pPvt->state = idle;
+                    epicsEventWaitWithTimeout(pPvt->msgEvent, DEFAULT_WAIT_DELAY);
                     break;
                 }
             }
@@ -3867,7 +3870,7 @@ static void daqThread(void *param)
                 {
                     DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
                     asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (StartTask): %s\n", pPvt->daqMxErrBuf);
+                        "### 2DAQmx ERROR (StartTask): %s\n", pPvt->daqMxErrBuf);
                     pPvt->state = idle;
                     break;
                 }
@@ -4445,7 +4448,7 @@ static void daqThread(void *param)
             {
                 DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
                 asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                    "### DAQmx ERROR (StartTask): %s\n", pPvt->daqMxErrBuf);
+                    "### 3DAQmx ERROR (StartTask): %s\n", pPvt->daqMxErrBuf);
                 pPvt->state = idle;
                 break;
             }
@@ -4486,7 +4489,7 @@ static void daqThread(void *param)
             {
                 DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
                 asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                    "### DAQmx ERROR (StartTask): %s\n", pPvt->daqMxErrBuf);
+                    "### 4DAQmx ERROR (StartTask): %s\n", pPvt->daqMxErrBuf);
                 pPvt->state = idle;
                 break;
             }
