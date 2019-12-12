@@ -3271,7 +3271,9 @@ static void daqThread(void *param)
 
     asynUInt32DigitalInterrupt *pUInt32DigitalInterrupt;
 
+    // Set to 0 to suppress some constantly raised errors.
     int printErrs = 1;
+
     int sampleMode = 0;
     int ignoreMsg = 0;
     struct timespec tp;
@@ -3654,12 +3656,13 @@ static void daqThread(void *param)
                         pPvt->clockSource,
                         pPvt->sampleRate,
                         DAQmx_Val_Rising, sampleMode,
-                        pPvt->nSamples)))
+                        pPvt->nSamples)) && (printErrs == 1))
                     {
                         DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
                         asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                             "### DAQmx ERROR (CfgSampClkTiming): %s\n", pPvt->daqMxErrBuf);
                         pPvt->state = unconfigured;
+                        printErrs = 0;
                         break;
                     }
                 }
