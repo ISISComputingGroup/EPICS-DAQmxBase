@@ -4110,8 +4110,13 @@ static void daqThread(void *param)
                 asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                     "### DAQmx ERROR (ReadDigitalU32): %s\n", pPvt->daqMxErrBuf);
                 pPvt->state = stop;
-                break;
+                IOIntrStatusCode = COMM_ALARM;
+                IOIntrSeverityCode = INVALID_ALARM;
+            } else {
+                IOIntrStatusCode = NO_ALARM;
+                IOIntrSeverityCode = NO_ALARM;
             }
+
             pPvt->samplesRead = tmpSamplesRead;
 
             /* swap buffers and then update channel ptrs*/
@@ -4164,6 +4169,10 @@ static void daqThread(void *param)
                 pInt32ArrayInterrupt = pNode->drvPvt;
                 reason = pInt32ArrayInterrupt->pasynUser->reason;
 
+                pInt32ArrayInterrupt->pasynUser->auxStatus = IOIntrStatusCode;
+                pInt32ArrayInterrupt->pasynUser->alarmStatus = IOIntrStatusCode;
+                pInt32ArrayInterrupt->pasynUser->alarmSeverity = IOIntrSeverityCode;
+
                 if (reason == dataCmd)
                 {
                     pasynManager->getAddr(pInt32ArrayInterrupt->pasynUser, &signal);
@@ -4188,6 +4197,10 @@ static void daqThread(void *param)
                   "Finding interrupt node\n");*/
                 pInt32Interrupt = pNode->drvPvt;
                 reason = pInt32Interrupt->pasynUser->reason;
+
+                pInt32Interrupt->pasynUser->auxStatus = IOIntrStatusCode;
+                pInt32Interrupt->pasynUser->alarmStatus = IOIntrStatusCode;
+                pInt32Interrupt->pasynUser->alarmSeverity = IOIntrSeverityCode;
 
                 if ((reason == dataCmd) || (reason == dTimeCmd))
                 {
