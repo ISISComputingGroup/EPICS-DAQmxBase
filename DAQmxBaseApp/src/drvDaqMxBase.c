@@ -54,6 +54,7 @@
 #include <iocsh.h>
 #include <errlog.h>
 #include <epicsExport.h>
+#include <alarm.h>
 
 // The MXBASE macro can be used to construct names of iocsh commands and for use
 // in output strings to distinguish if we afre using base of full DAQmx
@@ -117,7 +118,7 @@
 #define DEFAULT_NSAMPLES 1000
 #define DEFAULT_TIMEOUT 5.0
 #define DEFAULT_DMA_BUF 128
-#define DEFAULT_WAIT_DELAY 1000.0
+#define DEFAULT_WAIT_DELAY 0.3
 #define MESSAGE_Q_CAPACITY 5
 #define EVENT_DATA 1
 
@@ -3273,6 +3274,8 @@ static void daqThread(void *param)
 
     // Set to 0 to suppress some constantly raised errors.
     int printErrs = 1;
+    epicsAlarmCondition IOIntrStatusCode = NO_ALARM;
+    epicsAlarmSeverity IOIntrSeverityCode = NO_ALARM;
 
     int sampleMode = 0;
     int ignoreMsg = 0;
@@ -3912,8 +3915,13 @@ static void daqThread(void *param)
                 asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                     "### DAQmx ERROR (ReadAnalogF64): %s\n", pPvt->daqMxErrBuf);
                 pPvt->state = stop;
-                break;
 
+                IOIntrStatusCode = COMM_ALARM;
+                IOIntrSeverityCode = INVALID_ALARM;
+
+            } else {
+                IOIntrStatusCode = NO_ALARM;
+                IOIntrSeverityCode = NO_ALARM;
             }
 
             /* swap buffers and then update channel ptrs*/
@@ -3957,17 +3965,18 @@ static void daqThread(void *param)
                     asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                         "### DAQmx ERROR (non-monster StoptTask): %s\n", pPvt->daqMxErrBuf);
                 }
-            }
-            if (!pPvt->polled) {
+            
+                if (!pPvt->polled) {
 
-                if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
-                {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (non-monster StartTask): %s\n", pPvt->daqMxErrBuf);
-                    pPvt->state = idle;
-                    break;
-                }
+                    if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
+                   {
+                       DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
+                       asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
+                           "### DAQmx ERROR (non-monster StartTask): %s\n", pPvt->daqMxErrBuf);
+                      pPvt->state = idle;
+                       break;
+                    }
+              }
             }
 
             /* Now put the read data in the correct places */
@@ -3986,6 +3995,10 @@ static void daqThread(void *param)
                   "Finding interrupt node\n");*/
                 pFloat64ArrayInterrupt = pNode->drvPvt;
                 reason = pFloat64ArrayInterrupt->pasynUser->reason;
+
+                pFloat64ArrayInterrupt->pasynUser->auxStatus = IOIntrStatusCode;
+                pFloat64ArrayInterrupt->pasynUser->alarmStatus = IOIntrStatusCode;
+                pFloat64ArrayInterrupt->pasynUser->alarmSeverity = IOIntrSeverityCode;
 
                 if (reason == dataCmd)
                 {
@@ -4011,6 +4024,10 @@ static void daqThread(void *param)
                   "Finding interrupt node\n");*/
                 pFloat64Interrupt = pNode->drvPvt;
                 reason = pFloat64Interrupt->pasynUser->reason;
+
+                pFloat64Interrupt->pasynUser->auxStatus = IOIntrStatusCode;
+                pFloat64Interrupt->pasynUser->alarmStatus = IOIntrStatusCode;
+                pFloat64Interrupt->pasynUser->alarmSeverity = IOIntrSeverityCode;
 
                 if ((reason == dataCmd) || (reason == dTimeCmd))
                 {
@@ -4117,20 +4134,20 @@ static void daqThread(void *param)
                     asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                         "### DAQmx ERROR (non-monster StopTask): %s\n", pPvt->daqMxErrBuf);
                 }
-            }
 
-            if (!pPvt->polled) {
-                /* Looks like this is needed!
-                   Maybe change the if to something more reliably?*/
-                if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
-                {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (non-monster StartTask): %s\n", pPvt->daqMxErrBuf);
-                    pPvt->state = idle;
-                    break;
+                if (!pPvt->polled) {
+                  /* Looks like this is needed!
+                     Maybe change the if to something more reliably?*/
+                  if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
+                  {
+                      DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
+                      asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
+                           "### DAQmx ERROR (non-monster StartTask): %s\n", pPvt->daqMxErrBuf);
+                       pPvt->state = idle;
+                       break;
+                   }
+
                 }
-
             }
 
 
