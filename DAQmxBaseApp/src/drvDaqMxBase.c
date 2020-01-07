@@ -3974,7 +3974,6 @@ static void daqThread(void *param)
                        asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                            "### DAQmx ERROR (non-monster StartTask): %s\n", pPvt->daqMxErrBuf);
                       pPvt->state = idle;
-                       break;
                     }
               }
             }
