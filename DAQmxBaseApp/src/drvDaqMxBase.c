@@ -3262,7 +3262,6 @@ static void printAsynError(daqMxBasePvt *pPvt, char* userMsg)
 
     DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
     asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR, msgToWrite, pPvt->daqMxErrBuf);
-    pPvt->state = unconfigured;
 }
 
 static void daqThread(void *param)
@@ -3433,10 +3432,12 @@ static void daqThread(void *param)
             if (DAQmxFailed(DAQmxBaseClearTask(pPvt->taskHandle)))
             {
                 printAsynError(pPvt, "### DAQmx ERROR (ClearTask):");
+                pPvt->state = unconfigured;
             }
             if (DAQmxFailed(DAQmxBaseCreateTask(pPvt->portName, &pPvt->taskHandle)))
             {
                 printAsynError(pPvt, "### DAQmx ERROR (CreateTask):");
+                pPvt->state = unconfigured;
             }
             pPvt->state = configure;
             break;
@@ -3466,6 +3467,7 @@ static void daqThread(void *param)
                         NULL)) && (strncmp(pPvt->daqMxErrBuf, lastErr, ERR_BUF_SIZE) != 0))
                     {
                         printAsynError(pPvt, "### DAQmx ERROR (CreateAI):");
+                        pPvt->state = unconfigured;
                         strncpy(lastErr, pPvt->daqMxErrBuf, ERR_BUF_SIZE);
                         break;
                     }
@@ -3480,6 +3482,7 @@ static void daqThread(void *param)
                         NULL)))
                     {
                         printAsynError(pPvt, "### DAQmx ERROR (CreateAO):");
+                        pPvt->state = unconfigured;
                         break;
                     }
                     break;
@@ -3490,6 +3493,7 @@ static void daqThread(void *param)
                         DAQmx_Val_ChanForAllLines)))
                     {
                         printAsynError(pPvt, "### DAQmx ERROR (CreateDI):");
+                        pPvt->state = unconfigured;
                         break;
                     }
                     break;
@@ -3500,6 +3504,7 @@ static void daqThread(void *param)
                         DAQmx_Val_ChanForAllLines)))
                     {
                         printAsynError(pPvt, "### DAQmx ERROR (CreateDO):");
+                        pPvt->state = unconfigured;
                         break;
                     }
                     break;
@@ -3515,6 +3520,7 @@ static void daqThread(void *param)
                             0, 1, NULL)))
                         {
                             printAsynError(pPvt, "### DAQmx ERROR (CreateCIPeriod):");
+                            pPvt->state = unconfigured;
                             break;
                         }
                     }
@@ -3532,6 +3538,7 @@ static void daqThread(void *param)
                             direction)))
                         {
                             printAsynError(pPvt, "### DAQmx ERROR (CreateCICountEdge):");
+                            pPvt->state = unconfigured;
                             break;
                         }
                     }
@@ -3545,6 +3552,7 @@ static void daqThread(void *param)
                             NULL)))
                         {
                             printAsynError(pPvt, "### DAQmx ERROR (CreateCIPulseWidth):");
+                            pPvt->state = unconfigured;
                             break;
                         }
                     }
@@ -3579,6 +3587,7 @@ static void daqThread(void *param)
                     )))
                     {
                         printAsynError(pPvt, "### DAQmx ERROR (CreateCO):");
+                        pPvt->state = unconfigured;
                         break;
                     }
                     break;
@@ -3613,6 +3622,7 @@ static void daqThread(void *param)
                             pPvt->nSamples)))
                         {
                             printAsynError(pPvt, "### DAQmx ERROR (CfgImplicitTiming):");
+                            pPvt->state = unconfigured;
                             break;
                         }
                     }
@@ -3643,6 +3653,7 @@ static void daqThread(void *param)
                         pPvt->nSamples)) && (strncmp(pPvt->daqMxErrBuf, lastErr, ERR_BUF_SIZE) != 0))
                     {
                         printAsynError(pPvt, "### DAQmx ERROR (CfgSampClkTiming):");
+                        pPvt->state = unconfigured;
                         strncpy(lastErr, pPvt->daqMxErrBuf, ERR_BUF_SIZE);
                         break;
                     }
@@ -3657,6 +3668,7 @@ static void daqThread(void *param)
                 if (DAQmxFailed(DAQmxBaseCfgInputBuffer(pPvt->taskHandle, DEFAULT_DMA_BUF * pPvt->nSamples)))
                 {
                     printAsynError(pPvt, "### DAQmx ERROR (CfgSampClkInputBuffer):");
+                    pPvt->state = unconfigured;
                     break;
                 }
             }
