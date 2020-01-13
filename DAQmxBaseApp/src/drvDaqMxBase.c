@@ -3463,7 +3463,7 @@ static void daqThread(void *param)
                         pPvt->aioPvt[ch]->min,
                         pPvt->aioPvt[ch]->max,
                         DAQmx_Val_Volts,
-                        NULL)) && (strcmp(pPvt->daqMxErrBuf, lastErr) != 0))
+                        NULL)) && (strncmp(pPvt->daqMxErrBuf, lastErr, ERR_BUF_SIZE) != 0))
                     {
                         printAsynError(pPvt, "### DAQmx ERROR (CreateAI):");
                         strncpy(lastErr, pPvt->daqMxErrBuf, ERR_BUF_SIZE);
