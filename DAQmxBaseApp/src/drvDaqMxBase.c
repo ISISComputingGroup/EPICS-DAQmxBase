@@ -3272,10 +3272,11 @@ static void daqThread(void *param)
 
     asynUInt32DigitalInterrupt *pUInt32DigitalInterrupt;
 
-    // Set to 0 to suppress some constantly raised errors.
-    int printErrs = 1;
     epicsAlarmCondition IOIntrStatusCode = NO_ALARM;
     epicsAlarmSeverity IOIntrSeverityCode = NO_ALARM;
+
+    // Keep track of the last error printed.
+    char lastErr[ERR_BUF_SIZE];
 
     int sampleMode = 0;
     int ignoreMsg = 0;
@@ -3452,13 +3453,13 @@ static void daqThread(void *param)
                         pPvt->aioPvt[ch]->min,
                         pPvt->aioPvt[ch]->max,
                         DAQmx_Val_Volts,
-                        NULL)) && (printErrs == 1))
+                        NULL)) && (strcmp(pPvt->daqMxErrBuf, lastErr) != 0))
                     {
                         DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
                         asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                             "### DAQmx ERROR (CreateAI): %s\n", pPvt->daqMxErrBuf);
                         pPvt->state = unconfigured;
-                        printErrs = 0;
+                        strcpy(lastErr, pPvt->daqMxErrBuf);
                         break;
                     }
                     break;
@@ -3656,13 +3657,13 @@ static void daqThread(void *param)
                         pPvt->clockSource,
                         pPvt->sampleRate,
                         DAQmx_Val_Rising, sampleMode,
-                        pPvt->nSamples)) && (printErrs == 1))
+                        pPvt->nSamples)) && (strcmp(pPvt->daqMxErrBuf, lastErr) != 0))
                     {
                         DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
                         asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                             "### DAQmx ERROR (CfgSampClkTiming): %s\n", pPvt->daqMxErrBuf);
                         pPvt->state = unconfigured;
-                        printErrs = 0;
+                        strcpy(lastErr, pPvt->daqMxErrBuf);
                         break;
                     }
                 }
