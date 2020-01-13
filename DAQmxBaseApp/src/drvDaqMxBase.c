@@ -3249,13 +3249,12 @@ static asynStatus SoftTrigger(daqMxBasePvt *pPvt)
 }
 
 /*
- * printAsynError writes an error message to the IOC through asyn.
+ * printAsynError writes an error message to the IOC through asyn, then sets state to unconfigured
  * Inputs:
- * pPvt is a structure containing daqMxBase config information
- * lastErr contains the last raised error message through asyn, which is updated here
- * userMsg is a user-definable portion of the error message. The DAQmx extended error info is appended to this.
+ *  pPvt is a structure containing daqMxBase config information
+ *  userMsg is a user-definable portion of the error message. The DAQmx extended error info is appended to this.
 */
-static void printAsynError(daqMxBasePvt *pPvt, char* lastErr, char* userMsg)
+static void printAsynError(daqMxBasePvt *pPvt, char* userMsg)
 {
     char* msgToWrite[ERR_BUF_SIZE];
     strncpy(msgToWrite, userMsg, ERR_BUF_SIZE);
@@ -3264,8 +3263,6 @@ static void printAsynError(daqMxBasePvt *pPvt, char* lastErr, char* userMsg)
     DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
     asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR, msgToWrite, pPvt->daqMxErrBuf);
     pPvt->state = unconfigured;
-
-    strncpy(lastErr, pPvt->daqMxErrBuf, ERR_BUF_SIZE);
 }
 
 static void daqThread(void *param)
@@ -3474,12 +3471,8 @@ static void daqThread(void *param)
                         DAQmx_Val_Volts,
                         NULL)) && (strcmp(pPvt->daqMxErrBuf, lastErr) != 0))
                     {
-                        //DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                        //asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        //    "### DAQmx ERROR (CreateAI): %s\n", pPvt->daqMxErrBuf);
-                        //pPvt->state = unconfigured;
-                        //strcpy(lastErr, pPvt->daqMxErrBuf);
-                        printAsynError(pPvt, lastErr, "### DAQmx ERROR (CreateAI):");
+                        printAsynError(pPvt, "### DAQmx ERROR (CreateAI):");
+                        strncpy(lastErr, pPvt->daqMxErrBuf, ERR_BUF_SIZE);
                         break;
                     }
                     break;
@@ -3679,12 +3672,8 @@ static void daqThread(void *param)
                         DAQmx_Val_Rising, sampleMode,
                         pPvt->nSamples)) && (strncmp(pPvt->daqMxErrBuf, lastErr, ERR_BUF_SIZE) != 0))
                     {
-                        //DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                        //asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        //    "### DAQmx ERROR (CfgSampClkTiming): %s\n", pPvt->daqMxErrBuf);
-                        //pPvt->state = unconfigured;
-                        //strcpy(lastErr, pPvt->daqMxErrBuf);
-                        printAsynError(pPvt, lastErr, "### DAQmx ERROR (CfgSampClkTiming):");
+                        printAsynError(pPvt, "### DAQmx ERROR (CfgSampClkTiming):");
+                        strncpy(lastErr, pPvt->daqMxErrBuf, ERR_BUF_SIZE);
                         break;
                     }
                 }
