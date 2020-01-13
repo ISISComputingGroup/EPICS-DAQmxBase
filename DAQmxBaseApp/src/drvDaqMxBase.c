@@ -3256,7 +3256,7 @@ static asynStatus SoftTrigger(daqMxBasePvt *pPvt)
 */
 static void printAsynError(daqMxBasePvt *pPvt, char* userMsg)
 {
-    char* msgToWrite[ERR_BUF_SIZE];
+    char msgToWrite[ERR_BUF_SIZE];
     strncpy(msgToWrite, userMsg, ERR_BUF_SIZE);
     strncat(msgToWrite, " %s\n", 4);
 
@@ -3291,7 +3291,7 @@ static void daqThread(void *param)
     epicsAlarmSeverity IOIntrSeverityCode = NO_ALARM;
 
     // Keep track of the last error printed.
-    char* lastErr[ERR_BUF_SIZE];
+    char lastErr[ERR_BUF_SIZE];
 
     int sampleMode = 0;
     int ignoreMsg = 0;
@@ -3464,7 +3464,7 @@ static void daqThread(void *param)
                         pPvt->aioPvt[ch]->min,
                         pPvt->aioPvt[ch]->max,
                         DAQmx_Val_Volts,
-                        NULL)) && (strncmp(pPvt->daqMxErrBuf, lastErr, ERR_BUF_SIZE) != 0))
+                        NULL)) && (strncmp(lastErr, pPvt->daqMxErrBuf, ERR_BUF_SIZE) != 0))
                     {
                         printAsynError(pPvt, "### DAQmx ERROR (CreateAI):");
                         pPvt->state = unconfigured;
@@ -3650,7 +3650,7 @@ static void daqThread(void *param)
                         pPvt->clockSource,
                         pPvt->sampleRate,
                         DAQmx_Val_Rising, sampleMode,
-                        pPvt->nSamples)) && (strncmp(pPvt->daqMxErrBuf, lastErr, ERR_BUF_SIZE) != 0))
+                        pPvt->nSamples)) && (strncmp(lastErr, pPvt->daqMxErrBuf, ERR_BUF_SIZE) != 0))
                     {
                         printAsynError(pPvt, "### DAQmx ERROR (CfgSampClkTiming):");
                         pPvt->state = unconfigured;
