@@ -3249,7 +3249,7 @@ static asynStatus SoftTrigger(daqMxBasePvt *pPvt)
 }
 
 /*
- * printAsynError writes an error message to the IOC through asyn, then sets state to unconfigured
+ * printAsynError gets the extended DAQ error from DAQmx and prints this to the IOC through asyn.
  * Inputs:
  *  pPvt is a structure containing daqMxBase config information.
  *  lastErr is the error message sent through Asyn. lastErr is updated after the error is printed to asyn
@@ -3737,9 +3737,7 @@ static void daqThread(void *param)
                             pPvt->triggerLevel,
                             pPvt->triggerPreSamples)))
                         {
-                            DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                            asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                                "### DAQmx ERROR (AnlgRefTrig): %s\n", pPvt->daqMxErrBuf);
+                            printAsynError(pPvt, lastErr, "### DAQmx ERROR (AnlgRefTrig):");
                             pPvt->state = idle;
                             break;
 
@@ -3752,9 +3750,7 @@ static void daqThread(void *param)
                             (int32)pPvt->triggerSlope,
                             pPvt->triggerLevel)))
                         {
-                            DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                            asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                                "### DAQmx ERROR (AnlgStartTrig): %s\n", pPvt->daqMxErrBuf);
+                            printAsynError(pPvt, lastErr, "### DAQmx ERROR (AnlgStartTrig):");
                             pPvt->state = idle;
                             break;
 
@@ -3769,9 +3765,7 @@ static void daqThread(void *param)
                             (int32)pPvt->triggerSlope,
                             pPvt->triggerPreSamples)))
                         {
-                            DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                            asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                                "### DAQmx ERROR (DigRefTrig): %s\n", pPvt->daqMxErrBuf);
+                            printAsynError(pPvt, lastErr, "### DAQmx ERROR (DigRefTrig):");
                             pPvt->state = idle;
                             break;
 
@@ -3783,9 +3777,7 @@ static void daqThread(void *param)
                             pPvt->triggerDevice,
                             (int32)pPvt->triggerSlope)))
                         {
-                            DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                            asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                                "### DAQmx ERROR (DigStartTrig): %s\n", pPvt->daqMxErrBuf);
+                            printAsynError(pPvt, lastErr, "### DAQmx ERROR (DigStartTrig):");
                             pPvt->state = idle;
                             break;
 
@@ -3812,9 +3804,7 @@ static void daqThread(void *param)
             if ((pPvt->daqMode == AI) || (pPvt->daqMode == BI) || (pPvt->daqMode == COUNTER)) {
                 if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                 {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (StartTask): %s\n", pPvt->daqMxErrBuf);
+                    printAsynError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
                     pPvt->state = idle;
                     epicsEventWaitWithTimeout(pPvt->msgEvent, DEFAULT_WAIT_DELAY);
                     break;
@@ -3884,9 +3874,7 @@ static void daqThread(void *param)
             if (!pPvt->noRestartTask)
                 if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                 {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (StartTask): %s\n", pPvt->daqMxErrBuf);
+                    printAsynError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
                     pPvt->state = idle;
                     break;
                 }
@@ -3922,9 +3910,7 @@ static void daqThread(void *param)
                 &tmpSamplesRead,
                 NULL)))
             {
-                DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                    "### DAQmx ERROR (ReadAnalogF64): %s\n", pPvt->daqMxErrBuf);
+                printAsynError(pPvt, lastErr, "### DAQmx ERROR (ReadAnalogF64):");
                 pPvt->state = stop;
 
                 IOIntrStatusCode = COMM_ALARM;
@@ -3972,18 +3958,14 @@ static void daqThread(void *param)
                  */
                 if (DAQmxFailed(DAQmxBaseStopTask(pPvt->taskHandle)))
                 {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (non-monster StoptTask): %s\n", pPvt->daqMxErrBuf);
+                    printAsynError(pPvt, lastErr, "### DAQmx ERROR (non-monster StopTask):");
                 }
             
                 if (!pPvt->polled) {
 
                     if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                    {
-                       DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                       asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                           "### DAQmx ERROR (non-monster StartTask): %s\n", pPvt->daqMxErrBuf);
+                       printAsynError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
                       pPvt->state = idle;
                     }
               }
@@ -4112,9 +4094,8 @@ static void daqThread(void *param)
                 &tmpSamplesRead,
                 NULL)))
             {
-                DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                    "### DAQmx ERROR (ReadDigitalU32): %s\n", pPvt->daqMxErrBuf);
+                printAsynError(pPvt, lastErr, "### DAQmx ERROR (ReadDigitalU32):");
+
                 pPvt->state = stop;
                 IOIntrStatusCode = COMM_ALARM;
                 IOIntrSeverityCode = INVALID_ALARM;
@@ -4141,9 +4122,7 @@ static void daqThread(void *param)
                 */
                 if (DAQmxFailed(DAQmxBaseStopTask(pPvt->taskHandle)))
                 {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (non-monster StopTask): %s\n", pPvt->daqMxErrBuf);
+                    printAsynError(pPvt, lastErr, "### DAQmx ERROR (non-monster StopTask):");
                 }
 
                 if (!pPvt->polled) {
@@ -4151,9 +4130,7 @@ static void daqThread(void *param)
                      Maybe change the if to something more reliably?*/
                   if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                   {
-                      DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                      asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                           "### DAQmx ERROR (non-monster StartTask): %s\n", pPvt->daqMxErrBuf);
+                       printAsynError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
                        pPvt->state = idle;
                        break;
                    }
@@ -4257,9 +4234,7 @@ static void daqThread(void *param)
                     &tmpSamplesRead,
                     NULL)))
                 {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (ReadCounterF64): %s\n", pPvt->daqMxErrBuf);
+                    printAsynError(pPvt, lastErr, "### DAQmx ERROR (ReadCounterF64):");
                     pPvt->state = stop;
                     break;
                 }
@@ -4271,9 +4246,7 @@ static void daqThread(void *param)
                     pPvt->rawData,
                     NULL)))
                 {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (ReadCounterScalarF64): %s\n", pPvt->daqMxErrBuf);
+                    printAsynError(pPvt, lastErr, "### DAQmx ERROR (ReadCounterScalarF64):");
                     pPvt->state = stop;
                     break;
                 }
@@ -4285,9 +4258,7 @@ static void daqThread(void *param)
                     pPvt->rawData,
                     NULL)))
                 {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (ReadCounterScalarU32): %s\n", pPvt->daqMxErrBuf);
+                    printAsynError(pPvt, lastErr, "### DAQmx ERROR (ReadCounterScalarU32):");
                     pPvt->state = stop;
                     break;
                 }
@@ -4301,9 +4272,7 @@ static void daqThread(void *param)
                     &tmpSamplesRead,
                     NULL)))
                 {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (ReadCounterU32): %s\n", pPvt->daqMxErrBuf);
+                    printAsynError(pPvt, lastErr, "### DAQmx ERROR (ReadCounterU32):");
                     pPvt->state = stop;
                     break;
                 }
@@ -4334,9 +4303,7 @@ static void daqThread(void *param)
                    Maybe change the if to something more reliably?*/
                 if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                 {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (non-monster StartTask): %s\n", pPvt->daqMxErrBuf);
+                    printAsynError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
                     pPvt->state = idle;
                     break;
                 }
@@ -4428,9 +4395,7 @@ static void daqThread(void *param)
              */
             if (DAQmxFailed(DAQmxBaseStopTask(pPvt->taskHandle)))
             {
-                DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                    "### DAQmx ERROR (StopTask): %s\n", pPvt->daqMxErrBuf);
+                printAsynError(pPvt, lastErr, "### DAQmx ERROR (StopTask):");
                 pPvt->state = idle;
                 break;
             }
@@ -4445,9 +4410,7 @@ static void daqThread(void *param)
                     &tmpSamplesRead, /* using same variable as reading - should be ok? */
                     NULL)))
                 {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (WriteAnalogF64): %s\n", pPvt->daqMxErrBuf);
+                    printAsynError(pPvt, lastErr, "### DAQmx ERROR (WriteAnalogF64):");
                     pPvt->state = stop;
                 }
             }
@@ -4461,9 +4424,7 @@ static void daqThread(void *param)
                     &tmpSamplesRead, /* using same variable as reading - should be ok? */
                     NULL)))
                 {
-                    DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx ERROR (WriteDigitalU32): %s\n", pPvt->daqMxErrBuf);
+                    printAsynError(pPvt, lastErr, "### DAQmx ERROR (WriteDigitalU32):");
                     pPvt->state = stop;
                 }
 
@@ -4482,9 +4443,7 @@ static void daqThread(void *param)
              */
             if ( !autoStartWriteTask && DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)) )
             {
-                DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                    "### DAQmx ERROR (StartTask): %s\n", pPvt->daqMxErrBuf);
+                printAsynError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
                 pPvt->state = idle;
                 break;
             }
@@ -4523,9 +4482,7 @@ static void daqThread(void *param)
              So can in this way be used to generate pulses or series of pulses*/
             if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
             {
-                DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
-                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                    "### DAQmx ERROR (StartTask): %s\n", pPvt->daqMxErrBuf);
+                printAsynError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
                 pPvt->state = idle;
                 break;
             }
