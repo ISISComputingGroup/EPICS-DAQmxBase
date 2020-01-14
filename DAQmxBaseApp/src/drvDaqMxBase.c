@@ -3274,7 +3274,7 @@ static void fetchAndPrintDAQError(daqMxBasePvt *pPvt, char* lastErr, char* userM
     }
 }
 
-/* Sets the status and severity of a record in IO/Intr
+/* Sets the status and severity of a record in IO/Intr. Sets aux asynStatus to Error if severity is not none.
  * Inputs:
  *  pasynUser is the asynUser structure holding information about the Asyn interface
  *  status is the intented alarm state of the record (e.g. high alarm)
@@ -3282,7 +3282,13 @@ static void fetchAndPrintDAQError(daqMxBasePvt *pPvt, char* lastErr, char* userM
  */
 static void writeIOIntrSeverity (asynUser *pasynUser, epicsAlarmCondition status, epicsAlarmSeverity severity)
 {
-    pasynUser->auxStatus = status;
+    if (severity != epicsSevNone) {
+        pasynUser->auxStatus = asynError;
+    }
+    else {
+        pasynUser->auxStatus = asynSuccess;
+    }
+
     pasynUser->alarmStatus = status;
     pasynUser->alarmSeverity = severity;
 }
@@ -3959,6 +3965,8 @@ static void daqThread(void *param)
                 if (DAQmxFailed(DAQmxBaseStopTask(pPvt->taskHandle)))
                 {
                     fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StopTask):");
+                    IOIntrStatusCode = COMM_ALARM;
+                    IOIntrSeverityCode = INVALID_ALARM;
                 }
             
                 if (!pPvt->polled) {
@@ -3967,6 +3975,8 @@ static void daqThread(void *param)
                    {
                        fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
                       pPvt->state = idle;
+                      IOIntrStatusCode = COMM_ALARM;
+                      IOIntrSeverityCode = INVALID_ALARM;
                     }
               }
             }
@@ -3977,7 +3987,6 @@ static void daqThread(void *param)
 
             /*d = (epicsFloat64*)pPvt->rawData;*/
             epicsMutexLock(pPvt->lock);
-
             /* Interrupt for float64Array :) */
             pasynManager->interruptStart(pPvt->float64ArrayInterruptPvt, &pclientList);
             pNode = (interruptNode *)ellFirst(pclientList);
