@@ -3274,6 +3274,19 @@ static void printAsynError(daqMxBasePvt *pPvt, char* lastErr, char* userMsg)
     }
 }
 
+/* Sets the status and severity of a record in IO/Intr
+ * Inputs:
+ *  pasynUser is the asynUser structure holding information about the Asyn interface
+ *  status is the intented alarm state of the record (e.g. high alarm)
+ *  severity is the intended alarm severity of the record (e.g. invalid)
+ */
+static void writeIOIntrSeverity (asynUser *pasynUser, epicsAlarmCondition status, epicsAlarmSeverity severity)
+{
+    pasynUser->auxStatus = status;
+    pasynUser->alarmStatus = status;
+    pasynUser->alarmSeverity = severity;
+}
+
 static void daqThread(void *param)
 {
     daqMxBasePvt * pPvt = (daqMxBasePvt *)param;
@@ -3993,9 +4006,7 @@ static void daqThread(void *param)
                 pFloat64ArrayInterrupt = pNode->drvPvt;
                 reason = pFloat64ArrayInterrupt->pasynUser->reason;
 
-                pFloat64ArrayInterrupt->pasynUser->auxStatus = IOIntrStatusCode;
-                pFloat64ArrayInterrupt->pasynUser->alarmStatus = IOIntrStatusCode;
-                pFloat64ArrayInterrupt->pasynUser->alarmSeverity = IOIntrSeverityCode;
+                writeIOIntrSeverity(pFloat64ArrayInterrupt->pasynUser, IOIntrStatusCode, IOIntrSeverityCode);
 
                 if (reason == dataCmd)
                 {
@@ -4022,9 +4033,7 @@ static void daqThread(void *param)
                 pFloat64Interrupt = pNode->drvPvt;
                 reason = pFloat64Interrupt->pasynUser->reason;
 
-                pFloat64Interrupt->pasynUser->auxStatus = IOIntrStatusCode;
-                pFloat64Interrupt->pasynUser->alarmStatus = IOIntrStatusCode;
-                pFloat64Interrupt->pasynUser->alarmSeverity = IOIntrSeverityCode;
+                writeIOIntrSeverity(pFloat64Interrupt->pasynUser, IOIntrStatusCode, IOIntrSeverityCode);
 
                 if ((reason == dataCmd) || (reason == dTimeCmd))
                 {
@@ -4166,9 +4175,7 @@ static void daqThread(void *param)
                 pInt32ArrayInterrupt = pNode->drvPvt;
                 reason = pInt32ArrayInterrupt->pasynUser->reason;
 
-                pInt32ArrayInterrupt->pasynUser->auxStatus = IOIntrStatusCode;
-                pInt32ArrayInterrupt->pasynUser->alarmStatus = IOIntrStatusCode;
-                pInt32ArrayInterrupt->pasynUser->alarmSeverity = IOIntrSeverityCode;
+                writeIOIntrSeverity(pInt32ArrayInterrupt->pasynUser, IOIntrStatusCode, IOIntrSeverityCode);
 
                 if (reason == dataCmd)
                 {
@@ -4195,9 +4202,7 @@ static void daqThread(void *param)
                 pInt32Interrupt = pNode->drvPvt;
                 reason = pInt32Interrupt->pasynUser->reason;
 
-                pInt32Interrupt->pasynUser->auxStatus = IOIntrStatusCode;
-                pInt32Interrupt->pasynUser->alarmStatus = IOIntrStatusCode;
-                pInt32Interrupt->pasynUser->alarmSeverity = IOIntrSeverityCode;
+                writeIOIntrSeverity(pInt32Interrupt->pasynUser, IOIntrStatusCode, IOIntrSeverityCode);
 
                 if ((reason == dataCmd) || (reason == dTimeCmd))
                 {
@@ -4361,6 +4366,8 @@ static void daqThread(void *param)
                       "Finding interrupt node\n");*/
                     pInt32Interrupt = pNode->drvPvt;
                     reason = pInt32Interrupt->pasynUser->reason;
+
+                    writeIOIntrSeverity(pInt32Interrupt->pasynUser, IOIntrStatusCode, IOIntrSeverityCode);
 
                     if ((reason == dataCmd) || (reason == dTimeCmd))
                     {
