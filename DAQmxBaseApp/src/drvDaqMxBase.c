@@ -3280,7 +3280,7 @@ static void fetchAndPrintDAQError(daqMxBasePvt *pPvt, char* lastErr, char* userM
  *  status is the intented alarm state of the record (e.g. high alarm)
  *  severity is the intended alarm severity of the record (e.g. invalid)
  */
-static void writeIOIntrSeverity (asynUser *pasynUser, epicsAlarmCondition status, epicsAlarmSeverity severity)
+static void writeIOIntrSeverity (asynUser *pasynUser, const epicsAlarmCondition status, const epicsAlarmSeverity severity)
 {
     if (severity != epicsSevNone) {
         pasynUser->auxStatus = asynError;
@@ -3291,6 +3291,14 @@ static void writeIOIntrSeverity (asynUser *pasynUser, epicsAlarmCondition status
 
     pasynUser->alarmStatus = status;
     pasynUser->alarmSeverity = severity;
+}
+
+/* Sets the given alarm condition and severity to COMM alarm INVALID severity
+*/
+static void setInvalidCommAlarm(epicsAlarmCondition *alarm, epicsAlarmSeverity *severity)
+{
+    *alarm = COMM_ALARM;
+    *severity = INVALID_ALARM;
 }
 
 static void daqThread(void *param)
@@ -3745,6 +3753,7 @@ static void daqThread(void *param)
                         {
                             fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (AnlgRefTrig):");
                             pPvt->state = idle;
+                            setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
 
                         }
@@ -3758,6 +3767,7 @@ static void daqThread(void *param)
                         {
                             fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (AnlgStartTrig):");
                             pPvt->state = idle;
+                            setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
 
                         }
@@ -3773,6 +3783,7 @@ static void daqThread(void *param)
                         {
                             fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (DigRefTrig):");
                             pPvt->state = idle;
+                            setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
 
                         }
@@ -3785,6 +3796,7 @@ static void daqThread(void *param)
                         {
                             fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (DigStartTrig):");
                             pPvt->state = idle;
+                            setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
 
                         }
@@ -3882,6 +3894,7 @@ static void daqThread(void *param)
                 {
                     fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
                     pPvt->state = idle;
+                    setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                     break;
                 }
 
@@ -3919,8 +3932,7 @@ static void daqThread(void *param)
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ReadAnalogF64):");
                 pPvt->state = stop;
 
-                IOIntrStatusCode = COMM_ALARM;
-                IOIntrSeverityCode = INVALID_ALARM;
+                setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
 
             } else {
                 IOIntrStatusCode = NO_ALARM;
@@ -3965,18 +3977,16 @@ static void daqThread(void *param)
                 if (DAQmxFailed(DAQmxBaseStopTask(pPvt->taskHandle)))
                 {
                     fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StopTask):");
-                    IOIntrStatusCode = COMM_ALARM;
-                    IOIntrSeverityCode = INVALID_ALARM;
+                    setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                 }
             
                 if (!pPvt->polled) {
 
                     if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                    {
-                       fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
-                      pPvt->state = idle;
-                      IOIntrStatusCode = COMM_ALARM;
-                      IOIntrSeverityCode = INVALID_ALARM;
+                        fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
+                        setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
+                        pPvt->state = idle;
                     }
               }
             }
@@ -4106,8 +4116,7 @@ static void daqThread(void *param)
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ReadDigitalU32):");
 
                 pPvt->state = stop;
-                IOIntrStatusCode = COMM_ALARM;
-                IOIntrSeverityCode = INVALID_ALARM;
+                setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
             } else {
                 IOIntrStatusCode = NO_ALARM;
                 IOIntrSeverityCode = NO_ALARM;
@@ -4132,6 +4141,7 @@ static void daqThread(void *param)
                 if (DAQmxFailed(DAQmxBaseStopTask(pPvt->taskHandle)))
                 {
                     fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StopTask):");
+                    setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                 }
 
                 if (!pPvt->polled) {
@@ -4141,6 +4151,7 @@ static void daqThread(void *param)
                   {
                        fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
                        pPvt->state = idle;
+                       setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                        break;
                    }
 
@@ -4314,6 +4325,7 @@ static void daqThread(void *param)
                 {
                     fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
                     pPvt->state = idle;
+                    setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                     break;
                 }
             }
@@ -4406,6 +4418,7 @@ static void daqThread(void *param)
             {
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (StopTask):");
                 pPvt->state = idle;
+                setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                 break;
             }
 
@@ -4454,6 +4467,7 @@ static void daqThread(void *param)
             {
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
                 pPvt->state = idle;
+                setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                 break;
             }
 
@@ -4493,6 +4507,7 @@ static void daqThread(void *param)
             {
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
                 pPvt->state = idle;
+                setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                 break;
             }
 
