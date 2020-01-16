@@ -3265,12 +3265,12 @@ static void fetchAndPrintDAQError(daqMxBasePvt *pPvt, char* lastErr, char* userM
     DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
 
     // Do not print error if it hasn't changed
-    if (strncmp(lastErr, pPvt->daqMxErrBuf, ERR_BUF_SIZE) != 0)
+    if (strncmp(lastErr, userMsg, ERR_BUF_SIZE) != 0)
     {
         asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR, msgToWrite, pPvt->daqMxErrBuf);
 
         // Update the last sent error cache
-        strncpy(lastErr, pPvt->daqMxErrBuf, ERR_BUF_SIZE);
+        strncpy(lastErr, userMsg, ERR_BUF_SIZE);
     }
 }
 
