@@ -40,7 +40,7 @@
 #include <asynFloat64Array.h>
 #include <asynUInt32Digital.h>
 #include <asynDrvUser.h>
-#include <cantProceed.h>	/* callocMustSucceed() */
+#include <cantProceed.h>    /* callocMustSucceed() */
 #include <devLib.h>
 #include <epicsTypes.h>
 #include <epicsString.h>
@@ -104,7 +104,7 @@
 // Construct names for the IOCSH commands
 #define DAQMXCONFIG MXBASE "Config"
 #define DAQMXRESET MXBASE "Reset"
-#define	DAQMXCHANGEDEVICENAME MXBASE "ChangeDeviceName"
+#define DAQMXCHANGEDEVICENAME MXBASE "ChangeDeviceName"
 #define DAQMXPORTOPTIONS MXBASE "PortOptions"
 #define DAQMXGEN MXBASE "Gen"
 #define DAQMXGENP MXBASE "GenP"
@@ -425,15 +425,15 @@ typedef struct {
 } daqMxBaseCommandStuct;
 
 static daqMxBaseCommandStuct daqMxBaseCommands[MAX_COMMANDS] = {
-    {dataCmd,			"DATA"},
-    {acquireCmd,		"ACQUIRE"},
-    {triggerModeCmd,	"TRIGGERMODE"},
-    {sampleRateCmd,		"SAMPLERATE"},
-    {nSamplesCmd,		"NSAMPLES"},
+    {dataCmd,           "DATA"},
+    {acquireCmd,        "ACQUIRE"},
+    {triggerModeCmd,    "TRIGGERMODE"},
+    {sampleRateCmd,     "SAMPLERATE"},
+    {nSamplesCmd,       "NSAMPLES"},
     {maxNSamplesCmd,    "MAX_NELM"},
-    {minVoltCmd,		"MIN_VOLT"},
-    {maxVoltCmd,		"MAX_VOLT"},
-    {dTimeCmd,			"D_TIME"},
+    {minVoltCmd,        "MIN_VOLT"},
+    {maxVoltCmd,        "MAX_VOLT"},
+    {dTimeCmd,          "D_TIME"},
     {stateCmd,          "STATE"},
     {enableTriggerCmd,  "TRIGGERENABLE"},
     {triggerSlopeCmd ,  "TRIGGERSLOPE"},
@@ -734,7 +734,7 @@ static asynStatus int32ArrayRead(void *drvPvt, asynUser *pasynUser,
 
     pasynManager->getAddr(pasynUser, &signal);
 
-    /*	asynPrint(	pPvt->pasynUser, ASYN_TRACE_FLOW,
+    /*  asynPrint(  pPvt->pasynUser, ASYN_TRACE_FLOW,
                     "float64ArrayRead: command = %d (%s), signal = %d\n",
                     command, daqMxBaseCommands[command].commandString, signal);*/
 
@@ -797,7 +797,7 @@ static asynStatus int32ArrayWrite(void *drvPvt, asynUser *pasynUser,
 
     pasynManager->getAddr(pasynUser, &signal);
 
-    /*	asynPrint(	pPvt->pasynUser, ASYN_TRACE_FLOW,
+    /*  asynPrint(  pPvt->pasynUser, ASYN_TRACE_FLOW,
                     "float64ArrayRead: command = %d (%s), signal = %d\n",
                     command, daqMxBaseCommands[command].commandString, signal);*/
 
@@ -864,7 +864,7 @@ static asynStatus float64ArrayRead(void *drvPvt, asynUser *pasynUser,
 
     pasynManager->getAddr(pasynUser, &signal);
 
-    /*	asynPrint(	pPvt->pasynUser, ASYN_TRACE_FLOW,
+    /*  asynPrint(  pPvt->pasynUser, ASYN_TRACE_FLOW,
                     "float64ArrayRead: command = %d (%s), signal = %d\n",
                     command, daqMxBaseCommands[command].commandString, signal);*/
 
@@ -901,7 +901,7 @@ static asynStatus float64ArrayRead(void *drvPvt, asynUser *pasynUser,
         elementsToCopy = maxNElements;
     epicsMutexLock(pPvt->lock);
 
-    /*	printf("rawData=%p prevData=%p signaldata=%p\n ",pPvt->rawData,pPvt->prevData,pPvt->aioPvt[signal]->data);*/
+    /*  printf("rawData=%p prevData=%p signaldata=%p\n ",pPvt->rawData,pPvt->prevData,pPvt->aioPvt[signal]->data);*/
     if (pPvt->aioPvt[signal]->data)
         memcpy(data, pPvt->aioPvt[signal]->data, elementsToCopy * sizeof(epicsFloat64));
     else
@@ -933,7 +933,7 @@ static asynStatus float64ArrayWrite(void *drvPvt, asynUser *pasynUser,
 
     pasynManager->getAddr(pasynUser, &signal);
 
-    /*	asynPrint(	pPvt->pasynUser, ASYN_TRACE_FLOW,
+    /*  asynPrint(  pPvt->pasynUser, ASYN_TRACE_FLOW,
                     "float64ArrayRead: command = %d (%s), signal = %d\n",
                     command, daqMxBaseCommands[command].commandString, signal);*/
 
@@ -1186,7 +1186,7 @@ static asynStatus dmbWrite(void *drvPvt, asynUser *pasynUser,
               Removed this for now - don't think maxNelm has a purpose
             if (ivalue > pPvt->maxNelm)
             {
-                asynPrint(	pPvt->pasynUser, ASYN_TRACE_ERROR,
+                asynPrint(  pPvt->pasynUser, ASYN_TRACE_ERROR,
                             "dmbWrite: invalid argument - range is 0 to NELM=%d\n",pPvt->maxNelm);
                 status = asynError;
                 break;
@@ -1197,11 +1197,11 @@ static asynStatus dmbWrite(void *drvPvt, asynUser *pasynUser,
         /* This is dumb?
         if (dvalue)
         {
-                asynPrint(	pPvt->pasynUser, ASYN_TRACE_ERROR,
+                asynPrint(  pPvt->pasynUser, ASYN_TRACE_ERROR,
                             "dmbWrite: invalid datatype. Only Int32 is accpeted for this command.\n");
                 status = asynError;
                 break;
-                }	*/
+                }   */
         msg = msgConfigure;
         break;
 
@@ -2585,7 +2585,7 @@ static int PortOptions(daqMxBasePvt *pPvt, int Channelnr, char * options)
         else if (epicsStrCaseCmp(token, "TerminalDiff") == 0) {
             if (pPvt->aioPvt[Channelnr])
                 pPvt->aioPvt[Channelnr]->terminal = DAQmx_Val_Diff;
-            /*	    }else if (epicsStrCaseCmp(token,"Polled") == 0){
+            /*      }else if (epicsStrCaseCmp(token,"Polled") == 0){
                     pPvt->polled = 1;
                     }else if (epicsStrCaseCmp(token,"NotPolled") == 0){
                     pPvt->polled = 0;*/
@@ -3301,17 +3301,166 @@ static void setInvalidCommAlarm(epicsAlarmCondition *alarm, epicsAlarmSeverity *
     *severity = INVALID_ALARM;
 }
 
+/* Creates and configures all the channels
+*/
+static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
+{
+    int channel;
+    for (channel = 0; channel < pPvt->nChannels; channel++) {
+        switch (pPvt->daqMode) {
+        case AI:
+            if (DAQmxFailed(DAQmxBaseCreateAIVoltageChan(pPvt->taskHandle,
+                pPvt->aioPvt[channel]->devicename,
+                NULL,
+                pPvt->aioPvt[channel]->terminal,
+                pPvt->aioPvt[channel]->min,
+                pPvt->aioPvt[channel]->max,
+                DAQmx_Val_Volts,
+                NULL)))
+            {
+                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateAI):");
+                pPvt->state = unconfigured;
+                break;
+            }
+            break;
+        case AO:
+            if (DAQmxFailed(DAQmxBaseCreateAOVoltageChan(pPvt->taskHandle,
+                pPvt->aioPvt[channel]->devicename,
+                NULL,
+                pPvt->aioPvt[channel]->min,
+                pPvt->aioPvt[channel]->max,
+                DAQmx_Val_Volts,
+                NULL)))
+            {
+                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateAO):");
+                pPvt->state = unconfigured;
+                break;
+            }
+            break;
+        case BI:
+            if (DAQmxFailed(DAQmxBaseCreateDIChan(pPvt->taskHandle,
+                pPvt->bioPvt[channel]->devicename,
+                NULL,
+                DAQmx_Val_ChanForAllLines)))
+            {
+                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateDI):");
+                pPvt->state = unconfigured;
+                break;
+            }
+            break;
+        case BO:
+            if (DAQmxFailed(DAQmxBaseCreateDOChan(pPvt->taskHandle,
+                pPvt->bioPvt[channel]->devicename,
+                NULL,
+                DAQmx_Val_ChanForAllLines)))
+            {
+                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateDO):");
+                pPvt->state = unconfigured;
+                break;
+            }
+            break;
+        case COUNTER:
+            if (pPvt->counterCI == 1) {
+                if (DAQmxFailed(DAQmxBaseCreateCIPeriodChan(pPvt->taskHandle,
+                    pPvt->counterDevName, NULL,
+                    pPvt->ciPvt->min,
+                    pPvt->ciPvt->max,
+                    DAQmx_Val_Seconds,
+                    ((pPvt->counterEdge) ? DAQmx_Val_Rising : DAQmx_Val_Falling),
+                    DAQmx_Val_LowFreq1Ctr,
+                    0, 1, NULL)))
+                {
+                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCIPeriod):");
+                    pPvt->state = unconfigured;
+                    break;
+                }
+            }
+            else if (pPvt->counterCI == 2) {
+                int32 direction;
+                if (pPvt->counterDirection == 1)
+                    direction = DAQmx_Val_CountDown;
+                else if (pPvt->counterDirection == 2)
+                    direction = DAQmx_Val_ExtControlled;
+                else
+                    direction = DAQmx_Val_CountUp; /* 0 and default */
+                if (DAQmxFailed(DAQmxBaseCreateCICountEdgesChan(pPvt->taskHandle,
+                    pPvt->counterDevName, NULL,
+                    ((pPvt->counterEdge) ? DAQmx_Val_Rising : DAQmx_Val_Falling),
+                    0,
+                    direction)))
+                {
+                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCICountEdge):");
+                    pPvt->state = unconfigured;
+                    break;
+                }
+            }
+            else if (pPvt->counterCI == 3) {
+                if (DAQmxFailed(DAQmxBaseCreateCIPulseWidthChan(pPvt->taskHandle,
+                    pPvt->counterDevName, NULL,
+                    pPvt->ciPvt->min,
+                    pPvt->ciPvt->max,
+                    DAQmx_Val_Seconds,
+                    ((pPvt->counterEdge) ? DAQmx_Val_Rising : DAQmx_Val_Falling),
+                    NULL)))
+                {
+                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCIPulseWidth):");
+                    pPvt->state = unconfigured;
+                    break;
+                }
+            }
+            else {
+                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
+                    "### DAQmx ERROR (COUNTER): You must specifiy CI option! (%d)\n", pPvt->counterCI);
+                pPvt->state = unconfigured;
+                break;
+            }
+
+            if ((pPvt->counterRead == 1) || (pPvt->counterRead == 2)) {
+                if ((pPvt->nSamples == 1) || (pPvt->sampleRate == 0)) {
+                    if (pPvt->counterCI == 2) {
+                        pPvt->noRestartTask = 1;
+                        printf("Disabling restart"); /* debug code */
+                    }
+
+                }
+            }
+
+            break;
+        case CO:
+            if (DAQmxFailed(DAQmxBaseCreateCOPulseChanFreq(pPvt->taskHandle,
+                pPvt->counterDevName,
+                NULL,
+                DAQmx_Val_Hz,
+                ((pPvt->counterIdleState) ? DAQmx_Val_High : DAQmx_Val_Low),
+                pPvt->counterDelay,
+                pPvt->sampleRate,
+                pPvt->counterDutyCycle
+            )))
+            {
+                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCO):");
+                pPvt->state = unconfigured;
+                break;
+            }
+            break;
+        default:
+            pPvt->state = unconfigured;
+            asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
+                "### DAQmx:configure ERROR : Unknown daqMode \n");
+            break;
+        }
+    }
+}
+
 static void daqThread(void *param)
 {
     daqMxBasePvt * pPvt = (daqMxBasePvt *)param;
     /*epicsFloat64* d;*/
     void * tmpp;
-    int32 direction;
     int32 tmpSamplesRead;
-	bool32 autoStartWriteTask = TRUE;
+    bool32 autoStartWriteTask = TRUE;
     bool32 taskDone;
     /*bool32 boolresult;*/
-    int  ch, reason, signal;
+    int  reason, signal;
     daqMxBaseMessage msg;
     daqMxBaseState laststate = pPvt->state;
 
@@ -3446,7 +3595,7 @@ static void daqThread(void *param)
                 reason = pUInt32DigitalInterrupt->pasynUser->reason;
                 if (reason == stateCmd)
                 {
-                    /*					pasynManager->getAddr(pPvt->pasynUser, &signal);*/
+                    /*                  pasynManager->getAddr(pPvt->pasynUser, &signal);*/
                     pUInt32DigitalInterrupt->callback(pUInt32DigitalInterrupt->userPvt,
                         pUInt32DigitalInterrupt->pasynUser,
                         pPvt->state);
@@ -3488,152 +3637,9 @@ static void daqThread(void *param)
                 pPvt->state = unconfigured;
                 break;
             }
-            /* Maybe this configure part should become a seperate function? */
+            
+            ConfigureChannels(pPvt, lastErr);
 
-            for (ch = 0; ch < pPvt->nChannels; ch++) {
-                switch (pPvt->daqMode) {
-                case AI:
-                    /*printf("SETTING UP %s CHANNEL\n",pPvt->aioPvt[ch]->devicename);*/
-                    if (DAQmxFailed(DAQmxBaseCreateAIVoltageChan(pPvt->taskHandle,
-                        pPvt->aioPvt[ch]->devicename,
-                        NULL,
-                        pPvt->aioPvt[ch]->terminal,
-                        pPvt->aioPvt[ch]->min,
-                        pPvt->aioPvt[ch]->max,
-                        DAQmx_Val_Volts,
-                        NULL)))
-                    {
-                        fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateAI):");
-                        pPvt->state = unconfigured;
-                        break;
-                    }
-                    break;
-                case AO:
-                    if (DAQmxFailed(DAQmxBaseCreateAOVoltageChan(pPvt->taskHandle,
-                        pPvt->aioPvt[ch]->devicename,
-                        NULL,
-                        pPvt->aioPvt[ch]->min,
-                        pPvt->aioPvt[ch]->max,
-                        DAQmx_Val_Volts,
-                        NULL)))
-                    {
-                        fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateAO):");
-                        pPvt->state = unconfigured;
-                        break;
-                    }
-                    break;
-                case BI:
-                    if (DAQmxFailed(DAQmxBaseCreateDIChan(pPvt->taskHandle,
-                        pPvt->bioPvt[ch]->devicename,
-                        NULL,
-                        DAQmx_Val_ChanForAllLines)))
-                    {
-                        fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateDI):");
-                        pPvt->state = unconfigured;
-                        break;
-                    }
-                    break;
-                case BO:
-                    if (DAQmxFailed(DAQmxBaseCreateDOChan(pPvt->taskHandle,
-                        pPvt->bioPvt[ch]->devicename,
-                        NULL,
-                        DAQmx_Val_ChanForAllLines)))
-                    {
-                        fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateDO):");
-                        pPvt->state = unconfigured;
-                        break;
-                    }
-                    break;
-                case COUNTER:
-                    if (pPvt->counterCI == 1) {
-                        if (DAQmxFailed(DAQmxBaseCreateCIPeriodChan(pPvt->taskHandle,
-                            pPvt->counterDevName, NULL,
-                            pPvt->ciPvt->min,
-                            pPvt->ciPvt->max,
-                            DAQmx_Val_Seconds,
-                            ((pPvt->counterEdge) ? DAQmx_Val_Rising : DAQmx_Val_Falling),
-                            DAQmx_Val_LowFreq1Ctr,
-                            0, 1, NULL)))
-                        {
-                            fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCIPeriod):");
-                            pPvt->state = unconfigured;
-                            break;
-                        }
-                    }
-                    else if (pPvt->counterCI == 2) {
-                        if (pPvt->counterDirection == 1)
-                            direction = DAQmx_Val_CountDown;
-                        else if (pPvt->counterDirection == 2)
-                            direction = DAQmx_Val_ExtControlled;
-                        else
-                            direction = DAQmx_Val_CountUp; /* 0 and default */
-                        if (DAQmxFailed(DAQmxBaseCreateCICountEdgesChan(pPvt->taskHandle,
-                            pPvt->counterDevName, NULL,
-                            ((pPvt->counterEdge) ? DAQmx_Val_Rising : DAQmx_Val_Falling),
-                            0,
-                            direction)))
-                        {
-                            fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCICountEdge):");
-                            pPvt->state = unconfigured;
-                            break;
-                        }
-                    }
-                    else if (pPvt->counterCI == 3) {
-                        if (DAQmxFailed(DAQmxBaseCreateCIPulseWidthChan(pPvt->taskHandle,
-                            pPvt->counterDevName, NULL,
-                            pPvt->ciPvt->min,
-                            pPvt->ciPvt->max,
-                            DAQmx_Val_Seconds,
-                            ((pPvt->counterEdge) ? DAQmx_Val_Rising : DAQmx_Val_Falling),
-                            NULL)))
-                        {
-                            fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCIPulseWidth):");
-                            pPvt->state = unconfigured;
-                            break;
-                        }
-                    }
-                    else {
-                        asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                            "### DAQmx ERROR (COUNTER): You must specifiy CI option! (%d)\n", pPvt->counterCI);
-                        pPvt->state = unconfigured;
-                        break;
-                    }
-
-                    if ((pPvt->counterRead == 1) || (pPvt->counterRead == 2)) {
-                        if ((pPvt->nSamples == 1) || (pPvt->sampleRate == 0)) {
-                            if (pPvt->counterCI == 2) {
-                                pPvt->noRestartTask = 1;
-                                printf("Disabling restart"); /* debug code */
-                            }
-
-                        }
-                    }
-
-
-                    break;
-                case CO:
-                    if (DAQmxFailed(DAQmxBaseCreateCOPulseChanFreq(pPvt->taskHandle,
-                        pPvt->counterDevName,
-                        NULL,
-                        DAQmx_Val_Hz,
-                        ((pPvt->counterIdleState) ? DAQmx_Val_High : DAQmx_Val_Low),
-                        pPvt->counterDelay,
-                        pPvt->sampleRate,
-                        pPvt->counterDutyCycle
-                    )))
-                    {
-                        fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCO):");
-                        pPvt->state = unconfigured;
-                        break;
-                    }
-                    break;
-                default:
-                    pPvt->state = unconfigured;
-                    asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                        "### DAQmx:configure ERROR : Unknown daqMode \n");
-                    break;
-                }
-            }
             if (pPvt->state != configure) break; /* something went wrong! */
 
             /* I needed to change this to make things work (monstermode) -H*/
@@ -3811,8 +3817,6 @@ static void daqThread(void *param)
             break;
 
         case idle:
-            /* Rather should wait for some event here - this is not optimal */
-            /*epicsThreadSleep(DEFAULT_WAIT_DELAY);*/
             epicsEventWaitWithTimeout(pPvt->msgEvent, DEFAULT_WAIT_DELAY);
             break;
 
@@ -3919,7 +3923,7 @@ static void daqThread(void *param)
 
             clock_gettime(CLOCK_REALTIME, &tp);
             pPvt->dAcqTime = (tp.tv_sec + (1e-9 * tp.tv_nsec)) - (oldtp.tv_sec + (1e-9 * oldtp.tv_nsec));
-			tmpSamplesRead = 0;
+            tmpSamplesRead = 0;
             if (DAQmxFailed(DAQmxBaseReadAnalogF64(pPvt->taskHandle,
                 pPvt->nSamples,
                 pPvt->timeout,
@@ -4070,7 +4074,7 @@ static void daqThread(void *param)
                 /* Not needed in polled/oneshot mode
                 if( DAQmxFailed( DAQmxBaseStopTask( pPvt->taskHandle ) ))
                 {
-                asynPrint(	pPvt->pasynUser, ASYN_TRACE_ERROR,
+                asynPrint(  pPvt->pasynUser, ASYN_TRACE_ERROR,
                         "### DAQmx ERROR (StopTask): %s\n", pPvt->daqMxErrBuf);
                 }
                 */
@@ -4102,7 +4106,7 @@ static void daqThread(void *param)
             }
 
             clock_gettime(CLOCK_REALTIME, &tp);
-			tmpSamplesRead = 0;
+            tmpSamplesRead = 0;
             pPvt->dAcqTime = (tp.tv_sec + (1e-9 * tp.tv_nsec)) - (oldtp.tv_sec + (1e-9 * oldtp.tv_nsec));
             if (DAQmxFailed(DAQmxBaseReadDigitalU32(pPvt->taskHandle,
                 pPvt->nSamples,
@@ -4241,7 +4245,7 @@ static void daqThread(void *param)
 
 
             clock_gettime(CLOCK_REALTIME, &tp);
-			tmpSamplesRead = 0;
+            tmpSamplesRead = 0;
             pPvt->dAcqTime = (tp.tv_sec + (1e-9 * tp.tv_nsec)) - (oldtp.tv_sec + (1e-9 * oldtp.tv_nsec));
 
             switch (pPvt->counterRead) {
@@ -4395,7 +4399,7 @@ static void daqThread(void *param)
             break;
         case write:
             /* Write mode */
-			tmpSamplesRead = 0;
+            tmpSamplesRead = 0;
 
             /* Step 1 - wait :)  (see if we need todo something) */
             epicsEventWaitWithTimeout(pPvt->writeEvent, DEFAULT_WAIT_DELAY);
@@ -4425,7 +4429,7 @@ static void daqThread(void *param)
             if (pPvt->daqMode == AO) {
                 if (DAQmxFailed(DAQmxBaseWriteAnalogF64(pPvt->taskHandle,
                     pPvt->nSamples,
-					autoStartWriteTask,
+                    autoStartWriteTask,
                     pPvt->timeout,
                     DAQmx_Val_GroupByChannel,
                     pPvt->rawData,
@@ -4439,7 +4443,7 @@ static void daqThread(void *param)
             else if (pPvt->daqMode == BO) {
                 if (DAQmxFailed(DAQmxBaseWriteDigitalU32(pPvt->taskHandle,
                     pPvt->nSamples,
-					autoStartWriteTask,
+                    autoStartWriteTask,
                     pPvt->timeout,
                     DAQmx_Val_GroupByChannel,
                     pPvt->rawData,
