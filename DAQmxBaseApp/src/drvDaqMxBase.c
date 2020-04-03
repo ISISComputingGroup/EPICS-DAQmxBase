@@ -937,8 +937,6 @@ static asynStatus float64ArrayWrite(void *drvPvt, asynUser *pasynUser,
                     "float64ArrayRead: command = %d (%s), signal = %d\n",
                     command, daqMxBaseCommands[command].commandString, signal);*/
 
-
-
     if (signal > pPvt->nChannels || signal < 0)
     {
         asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
@@ -968,16 +966,12 @@ static asynStatus float64ArrayWrite(void *drvPvt, asynUser *pasynUser,
         */
     }
 
-
-
     memcpy(pPvt->aioPvt[signal]->data, data, elementsToCopy * sizeof(epicsFloat64));
     /* signal to actually write this data: */
     pPvt->writeNeeded = 1;
     epicsEventSignal(pPvt->writeEvent);
 
     epicsMutexUnlock(pPvt->lock);
-
-
 
     return(asynSuccess);
 }
@@ -1041,12 +1035,6 @@ static asynStatus drvUserCreate(void *drvPvt, asynUser *pasynUser,
                 break;
             }
         }
-
-        /* Now check for some other custom configuration options */
-        if (!success) {
-
-
-        }
     }
 
     if (overallsuccess)
@@ -1056,7 +1044,6 @@ static asynStatus drvUserCreate(void *drvPvt, asynUser *pasynUser,
     asynPrint(pasynUser, ASYN_TRACE_ERROR,
         "drvDaqMxBase::drvUserCreate, unknown command: %s\n", drvInfo);
     return(asynError);
-
 }
 
 static asynStatus drvUserGetType(void *drvPvt, asynUser *pasynUser,
@@ -1127,6 +1114,24 @@ static asynStatus WriteOne(daqMxBasePvt *pPvt, asynUser *pasynUser, int signal, 
 
 
     return asynSuccess;
+}
+
+/* Sends a message to control the flow of the state machine
+*/
+static asynStatus sendMessage(daqMxBasePvt *pPvt, daqMxBaseMessage msg) {
+    asynStatus returnCode = asynSuccess;
+    epicsMutexLock(pPvt->lock);
+    if (msg != msgNoAction) {
+        if (epicsMessageQueueTrySend(pPvt->msgQid, &msg, sizeof(daqMxBaseMessage)) != 0)
+        {
+            asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
+                "dmbWrite: failed to send message %d\n", msg);
+            returnCode = asynError;
+        }
+        epicsEventSignal(pPvt->msgEvent);
+    }
+    epicsMutexUnlock(pPvt->lock);
+    return returnCode;
 }
 
 static asynStatus dmbWrite(void *drvPvt, asynUser *pasynUser,
@@ -1277,17 +1282,10 @@ static asynStatus dmbWrite(void *drvPvt, asynUser *pasynUser,
         break;
 
     }
-    if (msg != msgNoAction) {
-        if (epicsMessageQueueTrySend(pPvt->msgQid, &msg, sizeof(daqMxBaseMessage)) != 0)
-        {
-            asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                "dmbWrite: failed to send message %d\n", msg);
-            status = asynError;
-        }
-        epicsEventSignal(pPvt->msgEvent);
-    }
-
     epicsMutexUnlock(pPvt->lock);
+
+    status |= sendMessage(pPvt, msg);
+
     return(status);
 }
 
@@ -1306,8 +1304,6 @@ static asynStatus ReadOne(daqMxBasePvt *pPvt, asynUser *pasynUser, int signal, e
             return(asynTimeout);
         }
     }
-
-
 
     if ((pPvt->daqMode == AI) || (pPvt->daqMode == AO)) {
         if (pPvt->aioPvt[signal] == NULL)
@@ -1991,7 +1987,6 @@ static void DAQmxGenP(char * params)
 static void DAQepicsExitFunc(void * param)
 {
     /* */
-    daqMxBaseMessage msg = msgStop;
     daqMxBasePvt *pPvt = (daqMxBasePvt*)param;
     if (!pPvt) return;
 
@@ -2001,15 +1996,7 @@ static void DAQepicsExitFunc(void * param)
     {
         asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW, "waiting for NI to Stop (portname=%s)...\n", pPvt->portName);
 
-        epicsMutexLock(pPvt->lock);
-        if (epicsMessageQueueTrySend(pPvt->msgQid, &msg, sizeof(daqMxBaseMessage)) != 0)
-        {
-            asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                "dmbWrite: failed to send message %d\n", msg);
-        }
-        epicsEventSignal(pPvt->msgEvent);
-
-        epicsMutexUnlock(pPvt->lock);
+        sendMessage(pPvt, msgStop);
 
         epicsThreadSleep(DEFAULT_WAIT_DELAY);
     }
@@ -2021,7 +2008,6 @@ static void DAQepicsExitFunc(void * param)
 static int DAQmxReset(char * devicename)
 {
     daqMxBasePvt *pPvt = NULL;
-    daqMxBaseMessage msg = msgConfigure;
     char daqMxErrBuf[256];
 
     printf("Resetting device %s\n", devicename);
@@ -2037,16 +2023,7 @@ static int DAQmxReset(char * devicename)
     pPvt = (daqMxBasePvt*)ellFirst(&daqMxBaseDeviceList);
     while (pPvt)
     {
-        epicsMutexLock(pPvt->lock);
-        if (pPvt->state != unconfigured) {
-            if (epicsMessageQueueTrySend(pPvt->msgQid, &msg, sizeof(daqMxBaseMessage)) != 0)
-            {
-                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                    "dmbWrite: failed to send message %d\n", msg);
-            }
-        }
-        epicsEventSignal(pPvt->msgEvent);
-        epicsMutexUnlock(pPvt->lock);
+        sendMessage(pPvt, msgConfigure);
         pPvt = (daqMxBasePvt*)ellNext((ELLNODE*)pPvt);
     }
     return 0;
@@ -2777,8 +2754,6 @@ static void DAQmxPortOptions(char * portName, int Channelnr, char * options)
 {
     daqMxBasePvt * pPvt;
 
-    daqMxBaseMessage msg = msgConfigure;
-
     pPvt = (daqMxBasePvt*)ellFirst(&daqMxBaseDeviceList);
     /* run through the linked list to find a node with the
      * same asyn port name */
@@ -2806,17 +2781,7 @@ static void DAQmxPortOptions(char * portName, int Channelnr, char * options)
 
     if (pPvt->state == unconfigured) return;
 
-    epicsMutexLock(pPvt->lock);
-    if (pPvt->state != unconfigured) {
-        if (epicsMessageQueueTrySend(pPvt->msgQid, &msg, sizeof(daqMxBaseMessage)) != 0)
-        {
-            asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                "dmbWrite: failed to send message %d\n", msg);
-        }
-    }
-    epicsEventSignal(pPvt->msgEvent);
-    epicsMutexUnlock(pPvt->lock);
-
+    sendMessage(pPvt, msgConfigure);
 }
 
 static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, char * sacqType, char* options)
@@ -3010,8 +2975,6 @@ static void DAQmxTrigger(char * portName, char *triggersource, char * options)
 {
     daqMxBasePvt * pPvt;
 
-    daqMxBaseMessage msg = msgConfigure;
-
     pPvt = (daqMxBasePvt*)ellFirst(&daqMxBaseDeviceList);
     /* run through the linked list to find a node with the
      * same asyn port name */
@@ -3041,24 +3004,12 @@ static void DAQmxTrigger(char * portName, char *triggersource, char * options)
     }
 
     /* send configure message to port*/
-    epicsMutexLock(pPvt->lock);
-    if (pPvt->state != unconfigured) {
-        if (epicsMessageQueueTrySend(pPvt->msgQid, &msg, sizeof(daqMxBaseMessage)) != 0)
-        {
-            asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                "dmbWrite: failed to send message %d\n", msg);
-        }
-    }
-    epicsEventSignal(pPvt->msgEvent);
-    epicsMutexUnlock(pPvt->lock);
-
+    sendMessage(pPvt, msgConfigure);
 }
 
 static void DAQmxChangeDeviceName(char * portName, int channelnr, char * newdevicename)
 {
     daqMxBasePvt * pPvt;
-
-    daqMxBaseMessage msg = msgConfigure;
 
     pPvt = (daqMxBasePvt*)ellFirst(&daqMxBaseDeviceList);
     /* run through the linked list to find a node with the
@@ -3129,17 +3080,7 @@ static void DAQmxChangeDeviceName(char * portName, int channelnr, char * newdevi
     }
 
     /* send configure message to port*/
-    epicsMutexLock(pPvt->lock);
-    if (pPvt->state != unconfigured) {
-        if (epicsMessageQueueTrySend(pPvt->msgQid, &msg, sizeof(daqMxBaseMessage)) != 0)
-        {
-            asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                "dmbWrite: failed to send message %d\n", msg);
-        }
-    }
-    epicsEventSignal(pPvt->msgEvent);
-    epicsMutexUnlock(pPvt->lock);
-
+    sendMessage(pPvt, msgConfigure);
 }
 
 static void DAQmxStart(char * portName)
@@ -3605,7 +3546,6 @@ static void daqThread(void *param)
         switch (pPvt->state)
         {
         case unconfigured:
-            /*epicsThreadSleep(DEFAULT_WAIT_DELAY);*/
             epicsEventWaitWithTimeout(pPvt->msgEvent, DEFAULT_WAIT_DELAY);
             break;
         case reconfigure:
@@ -3992,8 +3932,6 @@ static void daqThread(void *param)
 
             /* Now put the read data in the correct places */
 
-
-
             /*d = (epicsFloat64*)pPvt->rawData;*/
             epicsMutexLock(pPvt->lock);
             /* Interrupt for float64Array :) */
@@ -4052,14 +3990,6 @@ static void daqThread(void *param)
 
             epicsMutexUnlock(pPvt->lock);
             oldtp = tp;
-
-            /* SHOULDNT WE REMOVE THIS?*/
-            /*post_event( EVENT_DATA ); - ok removed!*/
-
-
-            /* This is now removed - no longer functional as it overlaps alot with
-             Polled mode */
-             /*if (pPvt->trigMode == oneshot) pPvt->state = stop;*/
 
              /* Normally if pPvt->trigMode = oneshot then polled is also true */
             if (pPvt->polled) {
@@ -4156,8 +4086,6 @@ static void daqThread(void *param)
 
                 }
             }
-
-
 
             epicsMutexLock(pPvt->lock);
             /* Call interrupts - do not exit between lock and unlock!! */
@@ -4535,8 +4463,7 @@ static void daqThread(void *param)
             }
             pasynManager->interruptEnd(pPvt->uint32DigitalInterruptPvt);
             break;
-
-
+        
         default:
             asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                 "### Thread: unknown state: %d\n", (int)pPvt->state);
