@@ -3320,7 +3320,6 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
             {
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateAI):");
                 pPvt->state = unconfigured;
-                break;
             }
             break;
         case AO:
@@ -3334,7 +3333,6 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
             {
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateAO):");
                 pPvt->state = unconfigured;
-                break;
             }
             break;
         case BI:
@@ -3345,7 +3343,6 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
             {
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateDI):");
                 pPvt->state = unconfigured;
-                break;
             }
             break;
         case BO:
@@ -3356,7 +3353,6 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
             {
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateDO):");
                 pPvt->state = unconfigured;
-                break;
             }
             break;
         case COUNTER:
@@ -3439,7 +3435,6 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
             {
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCO):");
                 pPvt->state = unconfigured;
-                break;
             }
             break;
         default:
