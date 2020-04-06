@@ -16,23 +16,17 @@ DAQmx_registerRecordDeviceDriver pdbbase
 
 ## NI cDAQ-9181 with NI 9375 card
 
-epicsEnvSet("DAQ","cDAQ1Mod1")
-#epicsEnvSet("DAQ","cDAQ-R3G39Mod1")
+epicsEnvSet("DAQ","cDAQ1Mod3")
 
 ## port0 is input
-DAQmxConfig("myport0", "$(DAQ)/port0/line0:3", 0, "BI","OneShot N=1 F=0")
+DAQmxConfig("myport1", "$(DAQ)/ai0", 0, "AI","N=1000 F=1000")
+DAQmxConfig("myport1", "$(DAQ)/ai1", 1, "AI","N=1000 F=1000")
+DAQmxConfig("myport1", "$(DAQ)/ai2", 2, "AI","N=1000 F=1000")
+DAQmxConfig("myport1", "$(DAQ)/ai3", 3, "AI","N=1000 F=1000")
 #asynSetTraceMask("myport0", 0, 0x11)
 
-## port1 is output
-DAQmxConfig("myport1", "$(DAQ)/port1/line0:3", 0, "BO","N=1 F=0")
-asynSetTraceMask("myport1", 0,0x11)
-
 ## Load record instances
-dbLoadRecords("db/DAQmxBaseDigIn.vdb","DAQMX=test,PORT=myport0,CHAN=0")
-dbLoadRecords("db/DAQmxBaseControl.vdb","DAQMX=test,PORT=myport0,CHAN=0")
-
-dbLoadRecords("db/DAQmxBaseDigOut.vdb","DAQMX=test,PORT=myport1,CHAN=0")
-dbLoadRecords("db/DAQmxBaseControl.vdb","DAQMX=test,PORT=myport1,CHAN=0")
+dbLoadRecords("db/DAQmxBaseI.vdb","DAQMX=$(MYPVPREFIX)DAQMXTEST,PORT=myport1,NELM=100")
 
 cd "${TOP}/iocBoot/${IOC}"
 iocInit
