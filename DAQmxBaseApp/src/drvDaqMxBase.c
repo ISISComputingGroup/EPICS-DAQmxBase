@@ -3375,8 +3375,7 @@ static void handleNonMonsterMode(daqMxBasePvt * pPvt, char* lastErr, epicsAlarmC
         if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
         {
             fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
-            pPvt->state = reconfigure;
-            sendMessage(pPvt, msgStart);
+            pPvt->state = idle;
             setInvalidCommAlarm(pIOIntrStatusCode, pIOIntrSeverityCode);
         }
     }
