@@ -2339,8 +2339,6 @@ static asynStatus allocBuffers(daqMxBasePvt *pPvt, asynUser *pasynUser)
 {
 
     size_t sampleWidth;
-
-
     asynStatus result = asynSuccess;
 
     epicsMutexLock(pPvt->lock);
@@ -2353,30 +2351,6 @@ static asynStatus allocBuffers(daqMxBasePvt *pPvt, asynUser *pasynUser)
     {
         sampleWidth = sizeof(epicsFloat64);
 
-        /*
-          REPLACED by shared memory system :)
-        for (i = 0; i < pPvt->nChannels; i++)
-        {
-            if (pPvt->aioPvt[i] == NULL){
-            asynPrint(pasynUser, ASYN_TRACE_ERROR,"port %s: No data structure for analog channel %d\n ",pPvt->portName,i);
-            result = asynError;
-            }
-            if ((pPvt->aioPvt[i]->data == NULL) ||(pPvt->aioPvt[i]->dataSize < pPvt->nSamples)){
-            if (pPvt->aioPvt[i]->data != NULL)
-            {
-                free( pPvt->aioPvt[i]->data );
-                pPvt->aioPvt[i]->data = NULL;
-            }
-            pPvt->aioPvt[i]->data = (epicsFloat64*) calloc( pPvt->nSamples, sampleWidth);
-            if (pPvt->aioPvt[i]->data == NULL)
-            {
-                printf("### ERROR (allocBuffers): could not allocate mem for aioPvt->data (%d samples)\n", pPvt->nSamples);
-                result =  asynError;
-            }
-            pPvt->aioPvt[i]->dataSize = pPvt->nSamples;
-            }
-        }
-        */
         /* I think this is the correct way of calculating this */
         pPvt->totalNSamples = pPvt->nSamples * pPvt->nChannels;
 
@@ -3387,6 +3361,27 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
     }
 }
 
+static void handleNonMonsterMode(daqMxBasePvt * pPvt, char* lastErr, epicsAlarmCondition * pIOIntrStatusCode, epicsAlarmSeverity * pIOIntrSeverityCode)
+{
+    if (DAQmxFailed(DAQmxBaseStopTask(pPvt->taskHandle)))
+    {
+        fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StopTask):");
+        setInvalidCommAlarm(pIOIntrStatusCode, pIOIntrSeverityCode);
+    }
+
+    if (!pPvt->polled) {
+        /* Looks like this is needed!
+            Maybe change the if to something more reliably?*/
+        if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
+        {
+            fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
+            pPvt->state = reconfigure;
+            sendMessage(pPvt, msgStart);
+            setInvalidCommAlarm(pIOIntrStatusCode, pIOIntrSeverityCode);
+        }
+    }
+}
+
 static void daqThread(void *param)
 {
     daqMxBasePvt * pPvt = (daqMxBasePvt *)param;
@@ -3910,24 +3905,7 @@ static void daqThread(void *param)
                Note: Polled is true if in OneShot mode!
             */
             if (!pPvt->monstermode) {
-                /*  This is not only needed but fixes some error behavious also!!
-
-                 */
-                if (DAQmxFailed(DAQmxBaseStopTask(pPvt->taskHandle)))
-                {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StopTask):");
-                    setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
-                }
-            
-                if (!pPvt->polled) {
-
-                    if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
-                   {
-                        fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
-                        setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
-                        pPvt->state = idle;
-                    }
-              }
+                handleNonMonsterMode(pPvt, lastErr, &IOIntrStatusCode, &IOIntrSeverityCode);
             }
 
             /* Now put the read data in the correct places */
@@ -4062,29 +4040,7 @@ static void daqThread(void *param)
             setChannelPointers(pPvt);
 
             if (!pPvt->monstermode) {
-                /*  This is not only needed but fixes some error behavious also!!
-
-                I copied this from acquireAnlg - Untested.
-                -Heinrich
-                */
-                if (DAQmxFailed(DAQmxBaseStopTask(pPvt->taskHandle)))
-                {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StopTask):");
-                    setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
-                }
-
-                if (!pPvt->polled) {
-                  /* Looks like this is needed!
-                     Maybe change the if to something more reliably?*/
-                  if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
-                  {
-                       fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
-                       pPvt->state = idle;
-                       setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
-                       break;
-                   }
-
-                }
+                handleNonMonsterMode(pPvt, lastErr, &IOIntrStatusCode, &IOIntrSeverityCode);
             }
 
             epicsMutexLock(pPvt->lock);
@@ -4147,9 +4103,6 @@ static void daqThread(void *param)
             epicsMutexUnlock(pPvt->lock);
             oldtp = tp;
 
-            /* SHOULDNT WE REMOVE THIS?*/
-            /*post_event( EVENT_DATA ); - ok removed */
-
             if (pPvt->polled) {
                 epicsEventSignal(pPvt->polldone);
                 pPvt->state = busywait;
@@ -4183,7 +4136,6 @@ static void daqThread(void *param)
                 {
                     fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ReadCounterF64):");
                     pPvt->state = stop;
-                    break;
                 }
                 break;
             case 1: /*Scalar F64*/
@@ -4195,7 +4147,6 @@ static void daqThread(void *param)
                 {
                     fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ReadCounterScalarF64):");
                     pPvt->state = stop;
-                    break;
                 }
                 break;
             case 2: /*Scalar U32*/
@@ -4207,7 +4158,6 @@ static void daqThread(void *param)
                 {
                     fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ReadCounterScalarU32):");
                     pPvt->state = stop;
-                    break;
                 }
                 break;
             case 3: /*U32*/
@@ -4221,7 +4171,6 @@ static void daqThread(void *param)
                 {
                     fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ReadCounterU32):");
                     pPvt->state = stop;
-                    break;
                 }
                 break;
             default:
@@ -4307,9 +4256,6 @@ static void daqThread(void *param)
                 break;
             }
             epicsMutexUnlock(pPvt->lock);
-
-
-
 
             oldtp = tp;
 
