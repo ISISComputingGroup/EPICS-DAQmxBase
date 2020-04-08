@@ -2850,9 +2850,6 @@ static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, cha
         strcpy(tmpStrName, deviceName);
     }
 
-
-
-
     switch (pPvt->daqMode)
     {
     case AI:
@@ -3375,7 +3372,7 @@ static void handleNonMonsterMode(daqMxBasePvt * pPvt, char* lastErr, epicsAlarmC
         if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
         {
             fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
-            pPvt->state = idle;
+            pPvt->state = reconfigure;
             setInvalidCommAlarm(pIOIntrStatusCode, pIOIntrSeverityCode);
         }
     }
@@ -3554,6 +3551,8 @@ static void daqThread(void *param)
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateTask):");
                 pPvt->state = unconfigured;
             }
+            // Start taking data again
+            sendMessage(pPvt, msgStart);
             pPvt->state = configure;
             break;
 
@@ -3687,7 +3686,7 @@ static void daqThread(void *param)
                             pPvt->triggerPreSamples)))
                         {
                             fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (AnlgRefTrig):");
-                            pPvt->state = idle;
+                            pPvt->state = reconfigure;
                             setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
 
@@ -3701,7 +3700,7 @@ static void daqThread(void *param)
                             pPvt->triggerLevel)))
                         {
                             fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (AnlgStartTrig):");
-                            pPvt->state = idle;
+                            pPvt->state = reconfigure;
                             setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
 
@@ -3717,7 +3716,7 @@ static void daqThread(void *param)
                             pPvt->triggerPreSamples)))
                         {
                             fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (DigRefTrig):");
-                            pPvt->state = idle;
+                            pPvt->state = reconfigure;
                             setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
 
@@ -3730,7 +3729,7 @@ static void daqThread(void *param)
                             (int32)pPvt->triggerSlope)))
                         {
                             fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (DigStartTrig):");
-                            pPvt->state = idle;
+                            pPvt->state = reconfigure;
                             setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
 
@@ -3756,7 +3755,7 @@ static void daqThread(void *param)
                 if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                 {
                     fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
-                    pPvt->state = idle;
+                    pPvt->state = reconfigure;
                     epicsEventWaitWithTimeout(pPvt->msgEvent, DEFAULT_WAIT_DELAY);
                     break;
                 }
@@ -4199,7 +4198,7 @@ static void daqThread(void *param)
                 if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                 {
                     fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
-                    pPvt->state = idle;
+                    pPvt->state = reconfigure;
                     setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                     break;
                 }
@@ -4338,7 +4337,7 @@ static void daqThread(void *param)
             if ( !autoStartWriteTask && DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)) )
             {
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
-                pPvt->state = idle;
+                pPvt->state = reconfigure;
                 setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                 break;
             }
@@ -4378,7 +4377,7 @@ static void daqThread(void *param)
             if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
             {
                 fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
-                pPvt->state = idle;
+                pPvt->state = reconfigure;
                 setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                 break;
             }
