@@ -3538,17 +3538,6 @@ static void daqThread(void *param)
             epicsEventWaitWithTimeout(pPvt->msgEvent, DEFAULT_WAIT_DELAY);
             break;
         case reconfigure:
-            DAQmxBaseStopTask(pPvt->taskHandle); /* just for safety*/
-            if (DAQmxFailed(DAQmxBaseClearTask(pPvt->taskHandle)))
-            {
-                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (ClearTask):");
-                pPvt->state = unconfigured;
-            }
-            if (DAQmxFailed(DAQmxBaseCreateTask(pPvt->portName, &pPvt->taskHandle)))
-            {
-                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateTask):");
-                pPvt->state = unconfigured;
-            }
             // Start taking data again
             sendMessage(pPvt, msgStart);
             pPvt->state = configure;
@@ -3564,6 +3553,19 @@ static void daqThread(void *param)
                 break;
             }
             
+            /* Clear the tasks so that we start from a blank slate */
+            DAQmxBaseStopTask(pPvt->taskHandle);
+            if (DAQmxFailed(DAQmxBaseClearTask(pPvt->taskHandle)))
+            {
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (ClearTask):");
+                pPvt->state = unconfigured;
+            }
+            if (DAQmxFailed(DAQmxBaseCreateTask(pPvt->portName, &pPvt->taskHandle)))
+            {
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateTask):");
+                pPvt->state = unconfigured;
+            }
+
             ConfigureChannels(pPvt);
 
             if (pPvt->state != configure) break; /* something went wrong! */
