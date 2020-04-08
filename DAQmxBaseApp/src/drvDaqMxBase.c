@@ -327,6 +327,8 @@ typedef struct daqMxBasePvt {
     void *prevData;
     epicsInt32 rawDataSize;
     char daqMxErrBuf[ERR_BUF_SIZE];
+    // Keep track of the last error printed so we don't keep printing
+    char lastErr[ERR_BUF_SIZE];
     epicsMutexId lock;
     epicsMessageQueueId msgQid;
     epicsEventId msgEvent;
@@ -3164,10 +3166,9 @@ static asynStatus SoftTrigger(daqMxBasePvt *pPvt)
  * Fetches the extended DAQ error from DAQmx, then prints to the IOC through asyn.
  * Inputs:
  *  pPvt is a structure containing daqMxBase config information.
- *  lastErr is the error message sent through Asyn. lastErr is updated after the error is printed to asyn
  *  userMsg is a user-definable portion of the error message. The DAQmx extended error info is appended to this.
 */
-static void fetchAndPrintDAQError(daqMxBasePvt *pPvt, char* lastErr, char* userMsg)
+static void fetchAndPrintDAQError(daqMxBasePvt *pPvt, char* userMsg)
 {
     
     char msgToWrite[ERR_BUF_SIZE];
@@ -3177,12 +3178,12 @@ static void fetchAndPrintDAQError(daqMxBasePvt *pPvt, char* lastErr, char* userM
     DAQmxBaseGetExtendedErrorInfo(pPvt->daqMxErrBuf, ERR_BUF_SIZE);
 
     // Do not print error if it hasn't changed
-    if (strncmp(lastErr, userMsg, ERR_BUF_SIZE) != 0)
+    if (strncmp(pPvt->lastErr, userMsg, ERR_BUF_SIZE) != 0)
     {
         asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR, msgToWrite, pPvt->daqMxErrBuf);
 
         // Update the last sent error cache
-        strncpy(lastErr, userMsg, ERR_BUF_SIZE);
+        strncpy(pPvt->lastErr, userMsg, ERR_BUF_SIZE);
     }
 }
 
@@ -3215,7 +3216,7 @@ static void setInvalidCommAlarm(epicsAlarmCondition *alarm, epicsAlarmSeverity *
 
 /* Creates and configures all the channels
 */
-static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
+static void ConfigureChannels(daqMxBasePvt * pPvt)
 {
     int channel;
     for (channel = 0; channel < pPvt->nChannels; channel++) {
@@ -3230,7 +3231,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
                 DAQmx_Val_Volts,
                 NULL)))
             {
-                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateAI):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateAI):");
                 pPvt->state = unconfigured;
             }
             break;
@@ -3243,7 +3244,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
                 DAQmx_Val_Volts,
                 NULL)))
             {
-                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateAO):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateAO):");
                 pPvt->state = unconfigured;
             }
             break;
@@ -3253,7 +3254,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
                 NULL,
                 DAQmx_Val_ChanForAllLines)))
             {
-                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateDI):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateDI):");
                 pPvt->state = unconfigured;
             }
             break;
@@ -3263,7 +3264,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
                 NULL,
                 DAQmx_Val_ChanForAllLines)))
             {
-                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateDO):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateDO):");
                 pPvt->state = unconfigured;
             }
             break;
@@ -3278,7 +3279,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
                     DAQmx_Val_LowFreq1Ctr,
                     0, 1, NULL)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCIPeriod):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateCIPeriod):");
                     pPvt->state = unconfigured;
                     break;
                 }
@@ -3297,7 +3298,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
                     0,
                     direction)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCICountEdge):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateCICountEdge):");
                     pPvt->state = unconfigured;
                     break;
                 }
@@ -3311,7 +3312,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
                     ((pPvt->counterEdge) ? DAQmx_Val_Rising : DAQmx_Val_Falling),
                     NULL)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCIPulseWidth):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateCIPulseWidth):");
                     pPvt->state = unconfigured;
                     break;
                 }
@@ -3345,7 +3346,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
                 pPvt->counterDutyCycle
             )))
             {
-                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateCO):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateCO):");
                 pPvt->state = unconfigured;
             }
             break;
@@ -3358,11 +3359,11 @@ static void ConfigureChannels(daqMxBasePvt * pPvt, char* lastErr)
     }
 }
 
-static void handleNonMonsterMode(daqMxBasePvt * pPvt, char* lastErr, epicsAlarmCondition * pIOIntrStatusCode, epicsAlarmSeverity * pIOIntrSeverityCode)
+static void handleNonMonsterMode(daqMxBasePvt * pPvt, epicsAlarmCondition * pIOIntrStatusCode, epicsAlarmSeverity * pIOIntrSeverityCode)
 {
     if (DAQmxFailed(DAQmxBaseStopTask(pPvt->taskHandle)))
     {
-        fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StopTask):");
+        fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (non-monster StopTask):");
         setInvalidCommAlarm(pIOIntrStatusCode, pIOIntrSeverityCode);
     }
 
@@ -3371,7 +3372,7 @@ static void handleNonMonsterMode(daqMxBasePvt * pPvt, char* lastErr, epicsAlarmC
             Maybe change the if to something more reliably?*/
         if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
         {
-            fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
+            fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (non-monster StartTask):");
             pPvt->state = reconfigure;
             setInvalidCommAlarm(pIOIntrStatusCode, pIOIntrSeverityCode);
         }
@@ -3402,9 +3403,6 @@ static void daqThread(void *param)
 
     epicsAlarmCondition IOIntrStatusCode = NO_ALARM;
     epicsAlarmSeverity IOIntrSeverityCode = NO_ALARM;
-
-    // Keep track of the last error printed.
-    char lastErr[ERR_BUF_SIZE];
 
     int sampleMode = 0;
     int ignoreMsg = 0;
@@ -3543,12 +3541,12 @@ static void daqThread(void *param)
             DAQmxBaseStopTask(pPvt->taskHandle); /* just for safety*/
             if (DAQmxFailed(DAQmxBaseClearTask(pPvt->taskHandle)))
             {
-                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ClearTask):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (ClearTask):");
                 pPvt->state = unconfigured;
             }
             if (DAQmxFailed(DAQmxBaseCreateTask(pPvt->portName, &pPvt->taskHandle)))
             {
-                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CreateTask):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateTask):");
                 pPvt->state = unconfigured;
             }
             // Start taking data again
@@ -3566,7 +3564,7 @@ static void daqThread(void *param)
                 break;
             }
             
-            ConfigureChannels(pPvt, lastErr);
+            ConfigureChannels(pPvt);
 
             if (pPvt->state != configure) break; /* something went wrong! */
 
@@ -3591,7 +3589,7 @@ static void daqThread(void *param)
                             sampleMode,
                             pPvt->nSamples)))
                         {
-                            fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CfgImplicitTiming):");
+                            fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CfgImplicitTiming):");
                             pPvt->state = unconfigured;
                             break;
                         }
@@ -3622,7 +3620,7 @@ static void daqThread(void *param)
                         DAQmx_Val_Rising, sampleMode,
                         pPvt->nSamples)))
                     {
-                        fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CfgSampClkTiming):");
+                        fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CfgSampClkTiming):");
                         pPvt->state = unconfigured;
                         break;
                     }
@@ -3636,7 +3634,7 @@ static void daqThread(void *param)
             {
                 if (DAQmxFailed(DAQmxBaseCfgInputBuffer(pPvt->taskHandle, DEFAULT_DMA_BUF * pPvt->nSamples)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (CfgSampClkInputBuffer):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CfgSampClkInputBuffer):");
                     pPvt->state = unconfigured;
                     break;
                 }
@@ -3685,7 +3683,7 @@ static void daqThread(void *param)
                             pPvt->triggerLevel,
                             pPvt->triggerPreSamples)))
                         {
-                            fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (AnlgRefTrig):");
+                            fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (AnlgRefTrig):");
                             pPvt->state = reconfigure;
                             setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
@@ -3699,7 +3697,7 @@ static void daqThread(void *param)
                             (int32)pPvt->triggerSlope,
                             pPvt->triggerLevel)))
                         {
-                            fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (AnlgStartTrig):");
+                            fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (AnlgStartTrig):");
                             pPvt->state = reconfigure;
                             setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
@@ -3715,7 +3713,7 @@ static void daqThread(void *param)
                             (int32)pPvt->triggerSlope,
                             pPvt->triggerPreSamples)))
                         {
-                            fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (DigRefTrig):");
+                            fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (DigRefTrig):");
                             pPvt->state = reconfigure;
                             setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
@@ -3728,7 +3726,7 @@ static void daqThread(void *param)
                             pPvt->triggerDevice,
                             (int32)pPvt->triggerSlope)))
                         {
-                            fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (DigStartTrig):");
+                            fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (DigStartTrig):");
                             pPvt->state = reconfigure;
                             setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
@@ -3754,7 +3752,7 @@ static void daqThread(void *param)
             if ((pPvt->daqMode == AI) || (pPvt->daqMode == BI) || (pPvt->daqMode == COUNTER)) {
                 if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (StartTask):");
                     pPvt->state = reconfigure;
                     epicsEventWaitWithTimeout(pPvt->msgEvent, DEFAULT_WAIT_DELAY);
                     break;
@@ -3824,7 +3822,7 @@ static void daqThread(void *param)
             if (!pPvt->noRestartTask)
                 if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (StartTask):");
                     pPvt->state = idle;
                     setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                     break;
@@ -3861,7 +3859,7 @@ static void daqThread(void *param)
                 &tmpSamplesRead,
                 NULL)))
             {
-                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ReadAnalogF64):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (ReadAnalogF64):");
                 pPvt->state = stop;
 
                 setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
@@ -3903,7 +3901,7 @@ static void daqThread(void *param)
                Note: Polled is true if in OneShot mode!
             */
             if (!pPvt->monstermode) {
-                handleNonMonsterMode(pPvt, lastErr, &IOIntrStatusCode, &IOIntrSeverityCode);
+                handleNonMonsterMode(pPvt, &IOIntrStatusCode, &IOIntrSeverityCode);
             }
 
             /* Now put the read data in the correct places */
@@ -4018,7 +4016,7 @@ static void daqThread(void *param)
                 &tmpSamplesRead,
                 NULL)))
             {
-                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ReadDigitalU32):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (ReadDigitalU32):");
 
                 pPvt->state = stop;
                 setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
@@ -4038,7 +4036,7 @@ static void daqThread(void *param)
             setChannelPointers(pPvt);
 
             if (!pPvt->monstermode) {
-                handleNonMonsterMode(pPvt, lastErr, &IOIntrStatusCode, &IOIntrSeverityCode);
+                handleNonMonsterMode(pPvt, &IOIntrStatusCode, &IOIntrSeverityCode);
             }
 
             epicsMutexLock(pPvt->lock);
@@ -4132,7 +4130,7 @@ static void daqThread(void *param)
                     &tmpSamplesRead,
                     NULL)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ReadCounterF64):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (ReadCounterF64):");
                     pPvt->state = stop;
                 }
                 break;
@@ -4143,7 +4141,7 @@ static void daqThread(void *param)
                     pPvt->rawData,
                     NULL)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ReadCounterScalarF64):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (ReadCounterScalarF64):");
                     pPvt->state = stop;
                 }
                 break;
@@ -4154,7 +4152,7 @@ static void daqThread(void *param)
                     pPvt->rawData,
                     NULL)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ReadCounterScalarU32):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (ReadCounterScalarU32):");
                     pPvt->state = stop;
                 }
                 break;
@@ -4167,7 +4165,7 @@ static void daqThread(void *param)
                     &tmpSamplesRead,
                     NULL)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (ReadCounterU32):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (ReadCounterU32):");
                     pPvt->state = stop;
                 }
                 break;
@@ -4197,7 +4195,7 @@ static void daqThread(void *param)
                    Maybe change the if to something more reliably?*/
                 if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (non-monster StartTask):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (non-monster StartTask):");
                     pPvt->state = reconfigure;
                     setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                     break;
@@ -4287,7 +4285,7 @@ static void daqThread(void *param)
              */
             if (DAQmxFailed(DAQmxBaseStopTask(pPvt->taskHandle)))
             {
-                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (StopTask):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (StopTask):");
                 pPvt->state = idle;
                 setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                 break;
@@ -4303,7 +4301,7 @@ static void daqThread(void *param)
                     &tmpSamplesRead, /* using same variable as reading - should be ok? */
                     NULL)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (WriteAnalogF64):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (WriteAnalogF64):");
                     pPvt->state = stop;
                 }
             }
@@ -4317,7 +4315,7 @@ static void daqThread(void *param)
                     &tmpSamplesRead, /* using same variable as reading - should be ok? */
                     NULL)))
                 {
-                    fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (WriteDigitalU32):");
+                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (WriteDigitalU32):");
                     pPvt->state = stop;
                 }
 
@@ -4336,7 +4334,7 @@ static void daqThread(void *param)
              */
             if ( !autoStartWriteTask && DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)) )
             {
-                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (StartTask):");
                 pPvt->state = reconfigure;
                 setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                 break;
@@ -4376,7 +4374,7 @@ static void daqThread(void *param)
              So can in this way be used to generate pulses or series of pulses*/
             if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
             {
-                fetchAndPrintDAQError(pPvt, lastErr, "### DAQmx ERROR (StartTask):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (StartTask):");
                 pPvt->state = reconfigure;
                 setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
                 break;
