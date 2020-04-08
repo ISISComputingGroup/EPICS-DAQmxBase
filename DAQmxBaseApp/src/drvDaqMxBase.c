@@ -3170,7 +3170,6 @@ static asynStatus SoftTrigger(daqMxBasePvt *pPvt)
 */
 static void fetchAndPrintDAQError(daqMxBasePvt *pPvt, char* userMsg)
 {
-    
     char msgToWrite[ERR_BUF_SIZE];
     strncpy(msgToWrite, userMsg, ERR_BUF_SIZE);
     strncat(msgToWrite, " %s\n", 4);
@@ -3212,6 +3211,25 @@ static void setInvalidCommAlarm(epicsAlarmCondition *alarm, epicsAlarmSeverity *
 {
     *alarm = COMM_ALARM;
     *severity = INVALID_ALARM;
+}
+
+/* Handles any errors that might occur whilst running. By logging, setting alarms then attempting to reconfigure.
+ * Inputs:
+ *  pPvt is a pointer to the structure defining the task
+ *  errLocation is where this error occured
+ *  alarm is a pointer to where to set the alarm condition
+ *  severity is a pointer to where to set the alarm severity
+*/
+static void handleErrorWhilstRunning(daqMxBasePvt * pPvt, char * errLocation, epicsAlarmCondition *alarm, epicsAlarmSeverity *severity)
+{
+    char errPrefix[2*ERR_BUF_SIZE];
+    strncpy(errPrefix, "### DAQmx ERROR (", ERR_BUF_SIZE);
+    strncat(errPrefix, errLocation, strlen(errLocation));
+    strncat(errPrefix, "):", 2);
+
+    fetchAndPrintDAQError(pPvt, errPrefix);
+    pPvt->state = reconfigure;
+    setInvalidCommAlarm(alarm, severity);
 }
 
 /* Creates and configures all the channels
@@ -3372,9 +3390,7 @@ static void handleNonMonsterMode(daqMxBasePvt * pPvt, epicsAlarmCondition * pIOI
             Maybe change the if to something more reliably?*/
         if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
         {
-            fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (non-monster StartTask):");
-            pPvt->state = reconfigure;
-            setInvalidCommAlarm(pIOIntrStatusCode, pIOIntrSeverityCode);
+            handleErrorWhilstRunning(pPvt, "non-monster StartTask", pIOIntrStatusCode, pIOIntrSeverityCode);
         }
     }
 }
@@ -3685,9 +3701,7 @@ static void daqThread(void *param)
                             pPvt->triggerLevel,
                             pPvt->triggerPreSamples)))
                         {
-                            fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (AnlgRefTrig):");
-                            pPvt->state = reconfigure;
-                            setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
+                            handleErrorWhilstRunning(pPvt, "AnlgRefTrig", &IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
 
                         }
@@ -3699,9 +3713,7 @@ static void daqThread(void *param)
                             (int32)pPvt->triggerSlope,
                             pPvt->triggerLevel)))
                         {
-                            fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (AnlgStartTrig):");
-                            pPvt->state = reconfigure;
-                            setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
+                            handleErrorWhilstRunning(pPvt, "AnlgStartTrig", &IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
 
                         }
@@ -3715,9 +3727,7 @@ static void daqThread(void *param)
                             (int32)pPvt->triggerSlope,
                             pPvt->triggerPreSamples)))
                         {
-                            fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (DigRefTrig):");
-                            pPvt->state = reconfigure;
-                            setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
+                            handleErrorWhilstRunning(pPvt, "DigRefTrig", &IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
 
                         }
@@ -3728,9 +3738,7 @@ static void daqThread(void *param)
                             pPvt->triggerDevice,
                             (int32)pPvt->triggerSlope)))
                         {
-                            fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (DigStartTrig):");
-                            pPvt->state = reconfigure;
-                            setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
+                            handleErrorWhilstRunning(pPvt, "DigStartTrig", &IOIntrStatusCode, &IOIntrSeverityCode);
                             break;
 
                         }
@@ -3824,9 +3832,7 @@ static void daqThread(void *param)
             if (!pPvt->noRestartTask)
                 if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                 {
-                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (StartTask):");
-                    pPvt->state = idle;
-                    setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
+                    handleErrorWhilstRunning(pPvt, "StartTask", &IOIntrStatusCode, &IOIntrSeverityCode);
                     break;
                 }
 
@@ -4197,9 +4203,7 @@ static void daqThread(void *param)
                    Maybe change the if to something more reliably?*/
                 if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
                 {
-                    fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (non-monster StartTask):");
-                    pPvt->state = reconfigure;
-                    setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
+                    handleErrorWhilstRunning(pPvt, "non-monster StartTask", &IOIntrStatusCode, &IOIntrSeverityCode);
                     break;
                 }
             }
@@ -4336,9 +4340,7 @@ static void daqThread(void *param)
              */
             if ( !autoStartWriteTask && DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)) )
             {
-                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (StartTask):");
-                pPvt->state = reconfigure;
-                setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
+                handleErrorWhilstRunning(pPvt, "StartTask", &IOIntrStatusCode, &IOIntrSeverityCode);
                 break;
             }
 
@@ -4376,9 +4378,7 @@ static void daqThread(void *param)
              So can in this way be used to generate pulses or series of pulses*/
             if (DAQmxFailed(DAQmxBaseStartTask(pPvt->taskHandle)))
             {
-                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (StartTask):");
-                pPvt->state = reconfigure;
-                setInvalidCommAlarm(&IOIntrStatusCode, &IOIntrSeverityCode);
+                handleErrorWhilstRunning(pPvt, "StartTask", &IOIntrStatusCode, &IOIntrSeverityCode);
                 break;
             }
 
