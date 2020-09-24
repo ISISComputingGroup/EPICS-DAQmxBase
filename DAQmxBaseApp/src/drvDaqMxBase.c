@@ -3228,7 +3228,10 @@ static void handleErrorWhilstRunning(daqMxBasePvt * pPvt, char * errLocation, ep
     strncat(errPrefix, "):", 2);
 
     fetchAndPrintDAQError(pPvt, errPrefix);
+    
+    /* TODO TOM */
     pPvt->state = reconfigure;
+    
     setInvalidCommAlarm(alarm, severity);
 }
 
@@ -3555,10 +3558,18 @@ static void daqThread(void *param)
             break;
         case reconfigure:
             // Start taking data again
-            sendMessage(pPvt, msgStart);
+            if (pPvt->monstermode) {
+                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
+                    "### ERROR:(port:%s) reconfigure monster mode: stopping old task\n", pPvt->portName);
+                DAQmxBaseStopTask(pPvt->taskHandle);
+                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
+                    "### ERROR:(port:%s) reconfigure monster mode: starting new task\n", pPvt->portName);
+                DAQmxStart(pPvt->portName);
+            } else {
+                sendMessage(pPvt, msgStart);
+            }
             pPvt->state = configure;
             break;
-
         case configure:
             if (allocBuffers(pPvt, pPvt->pasynUser) == asynError)
             {
@@ -3882,7 +3893,10 @@ static void daqThread(void *param)
 
             pPvt->samplesRead = tmpSamplesRead;
             if (pPvt->samplesRead != pPvt->nSamples) {
-                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR, "### DAQmx ERROR : did not read requisted amount of samples\n");
+                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR, "### DAQmx ERROR : did not read requested amount of samples\n");
+                
+                handleErrorWhilstRunning(pPvt, "readAnalogF64:nsamples", &IOIntrStatusCode, &IOIntrSeverityCode);
+                /* TODO TOM */
             }
             tmpp = pPvt->rawData;
             pPvt->rawData = pPvt->prevData;

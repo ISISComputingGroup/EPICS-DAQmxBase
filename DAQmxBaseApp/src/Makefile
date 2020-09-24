@@ -71,6 +71,13 @@ DAQmx_DBD += base.dbd
 DAQmx_DBD += DAQmxSupport.dbd
 DAQmx_DBD += asyn.dbd
 
+DAQmx_DBD += icpconfig.dbd
+DAQmx_DBD += pvdump.dbd
+DAQmx_DBD += asSupport.dbd
+DAQmx_DBD += devIocStats.dbd
+DAQmx_DBD += caPutLog.dbd
+DAQmx_DBD += utilities.dbd
+
 # DAQmxBase_registerRecordDeviceDriver.cpp will be created
 # DAQmxBase.dbd
 DAQmxBase_SRCS += DAQmxBase_registerRecordDeviceDriver.cpp
@@ -97,6 +104,13 @@ DAQmxBase_LIBS += asyn
 
 DAQmx_LIBS += DAQmxSupport
 DAQmx_LIBS += asyn
+
+DAQmx_LIBS += devIocStats 
+DAQmx_LIBS += pvdump $(MYSQLLIB) easySQLite sqlite 
+DAQmx_LIBS += caPutLog
+DAQmx_LIBS += icpconfig pugixml
+DAQmx_LIBS += autosave
+DAQmx_LIBS += utilities pcre libjson zlib
 
 # We need to link this IOC Application against the EPICS Base libraries
 DAQmxBase_LIBS += $(EPICS_BASE_IOC_LIBS)
