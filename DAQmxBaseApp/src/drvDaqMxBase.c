@@ -3228,10 +3228,7 @@ static void handleErrorWhilstRunning(daqMxBasePvt * pPvt, char * errLocation, ep
     strncat(errPrefix, "):", 2);
 
     fetchAndPrintDAQError(pPvt, errPrefix);
-    
-    /* TODO TOM */
     pPvt->state = reconfigure;
-    
     setInvalidCommAlarm(alarm, severity);
 }
 
@@ -3557,17 +3554,7 @@ static void daqThread(void *param)
             epicsEventWaitWithTimeout(pPvt->msgEvent, DEFAULT_WAIT_DELAY);
             break;
         case reconfigure:
-            // Start taking data again
-            if (pPvt->monstermode) {
-                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                    "### ERROR:(port:%s) reconfigure monster mode: stopping old task\n", pPvt->portName);
-                DAQmxBaseStopTask(pPvt->taskHandle);
-                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
-                    "### ERROR:(port:%s) reconfigure monster mode: starting new task\n", pPvt->portName);
-                DAQmxStart(pPvt->portName);
-            } else {
-                sendMessage(pPvt, msgStart);
-            }
+            sendMessage(pPvt, msgStart);
             pPvt->state = configure;
             break;
         case configure:
@@ -3893,10 +3880,8 @@ static void daqThread(void *param)
 
             pPvt->samplesRead = tmpSamplesRead;
             if (pPvt->samplesRead != pPvt->nSamples) {
-                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR, "### DAQmx ERROR : did not read requested amount of samples\n");
-                
+                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR, "### DAQmx ERROR : did not read requested amount of samples (read %d, requested %d)\n", pPvt->samplesRead, pPvt->nSamples);
                 handleErrorWhilstRunning(pPvt, "readAnalogF64:nsamples", &IOIntrStatusCode, &IOIntrSeverityCode);
-                /* TODO TOM */
             }
             tmpp = pPvt->rawData;
             pPvt->rawData = pPvt->prevData;
@@ -4363,6 +4348,7 @@ static void daqThread(void *param)
             {
                 asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                     "port %s: Write - didn't write all requested samples %d != %d\n", pPvt->portName, pPvt->samplesRead, pPvt->nSamples);
+                handleErrorWhilstRunning(pPvt, "writeDigitalU32:nsamples", &IOIntrStatusCode, &IOIntrSeverityCode);
             }
 
             while( !DAQmxFailed(DAQmxBaseIsTaskDone(pPvt->taskHandle, &taskDone)) && !taskDone )
