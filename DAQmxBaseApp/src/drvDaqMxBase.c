@@ -3554,11 +3554,9 @@ static void daqThread(void *param)
             epicsEventWaitWithTimeout(pPvt->msgEvent, DEFAULT_WAIT_DELAY);
             break;
         case reconfigure:
-            // Start taking data again
             sendMessage(pPvt, msgStart);
             pPvt->state = configure;
             break;
-
         case configure:
             if (allocBuffers(pPvt, pPvt->pasynUser) == asynError)
             {
@@ -3882,7 +3880,8 @@ static void daqThread(void *param)
 
             pPvt->samplesRead = tmpSamplesRead;
             if (pPvt->samplesRead != pPvt->nSamples) {
-                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR, "### DAQmx ERROR : did not read requisted amount of samples\n");
+                asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR, "### DAQmx ERROR : did not read requested amount of samples (read %d, requested %d)\n", pPvt->samplesRead, pPvt->nSamples);
+                handleErrorWhilstRunning(pPvt, "readAnalogF64:nsamples", &IOIntrStatusCode, &IOIntrSeverityCode);
             }
             tmpp = pPvt->rawData;
             pPvt->rawData = pPvt->prevData;
@@ -4349,6 +4348,7 @@ static void daqThread(void *param)
             {
                 asynPrint(pPvt->pasynUser, ASYN_TRACE_ERROR,
                     "port %s: Write - didn't write all requested samples %d != %d\n", pPvt->portName, pPvt->samplesRead, pPvt->nSamples);
+                handleErrorWhilstRunning(pPvt, "writeDigitalU32:nsamples", &IOIntrStatusCode, &IOIntrSeverityCode);
             }
 
             while( !DAQmxFailed(DAQmxBaseIsTaskDone(pPvt->taskHandle, &taskDone)) && !taskDone )
