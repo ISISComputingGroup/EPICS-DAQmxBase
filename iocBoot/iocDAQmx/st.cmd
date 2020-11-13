@@ -33,4 +33,4 @@ dbLoadRecords("db/DAQmxBaseI.vdb","DAQMX=$(MYPVPREFIX)DAQMXTEST,PORT=myport1,NEL
 cd "${TOP}/iocBoot/${IOC}"
 iocInit
 
-$(DAQPOSTIOCINITCMD=)
+$(DAQMXTEST__DAQPOSTIOCINITCMD=)
