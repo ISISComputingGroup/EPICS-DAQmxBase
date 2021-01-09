@@ -110,7 +110,7 @@ DAQmx_LIBS += pvdump $(MYSQLLIB) easySQLite sqlite
 DAQmx_LIBS += caPutLog
 DAQmx_LIBS += icpconfig pugixml
 DAQmx_LIBS += autosave
-DAQmx_LIBS += utilities pcre libjson zlib
+DAQmx_LIBS += utilities pcrecpp pcre libjson zlib
 
 # We need to link this IOC Application against the EPICS Base libraries
 DAQmxBase_LIBS += $(EPICS_BASE_IOC_LIBS)
