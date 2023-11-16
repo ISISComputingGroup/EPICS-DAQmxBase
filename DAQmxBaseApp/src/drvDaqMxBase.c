@@ -75,6 +75,7 @@
 #define DAQmxBaseStopTask DAQmxStopTask
 #define DAQmxBaseClearTask DAQmxClearTask
 #define DAQmxBaseCreateAIVoltageChan DAQmxCreateAIVoltageChan
+#define DAQmxBaseCreateAIThrmcplChan DAQmxCreateAIThrmcplChan
 #define DAQmxBaseCreateAOVoltageChan DAQmxCreateAOVoltageChan
 #define DAQmxBaseCreateDIChan DAQmxCreateDIChan
 #define DAQmxBaseCreateDOChan DAQmxCreateDOChan
@@ -99,6 +100,8 @@
 #define DAQmxBaseReadCounterU32 DAQmxReadCounterU32
 #define DAQmxBaseWriteAnalogF64 DAQmxWriteAnalogF64
 #define DAQmxBaseWriteDigitalU32 DAQmxWriteDigitalU32
+#define DAQmxBaseSetAIAutoZeroMode DAQmxSetAIAutoZeroMode
+#define DAQmxBaseSetAIADCTimingMode DAQmxSetAIADCTimingMode
 #endif
 
 // Construct names for the IOCSH commands
@@ -263,6 +266,16 @@ typedef enum {
 } daqMxBaseAcqMode;
 
 typedef enum {
+    CT_AI = 1,
+    CT_AITC,
+    CT_AO,
+    CT_BI,
+    CT_BO,
+    CT_COUNTER,
+    CT_CO
+} daqMxBaseChanType;
+
+typedef enum {
     Digital, Analog
 } daqMxTriggerType;
 
@@ -283,6 +296,11 @@ typedef struct daqAioPvt {
     epicsFloat64 avgData;
     epicsFloat64 min;
     epicsFloat64 max;
+    epicsInt32 units;
+    epicsInt32 thermocoupleType;
+    epicsInt32 cjcSource;
+    epicsFloat64 cjcVal;
+    const char* cjcChannel;
     epicsInt32  terminal;
 } daqAioPvt;
 
@@ -305,6 +323,7 @@ typedef struct daqCiPvt {
 typedef struct daqMxBasePvt {
     ELLNODE node;
     daqMxBaseAcqMode daqMode;
+    daqMxBaseChanType chanType;
     daqMxBaseTriggerMode trigMode;
     char monstermode;
     TaskHandle taskHandle;
@@ -2762,7 +2781,7 @@ static void DAQmxPortOptions(char * portName, int Channelnr, char * options)
 
 static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, char * sacqType, char* options)
 {
-    int acqType;
+    int acqType, chanType;
     daqMxBasePvt * pPvt;
     int stringLength, i;
     char * tmpStrName;
@@ -2771,21 +2790,31 @@ static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, cha
     /* Find acqType */
     if (strcmp(sacqType, "AI") == 0) {
         acqType = AI;
+        chanType = CT_AI;
+    }
+    if (strcmp(sacqType, "AITC") == 0) {
+        acqType = AI;
+        chanType = CT_AITC;
     }
     else if (strcmp(sacqType, "AO") == 0) {
         acqType = AO;
+        chanType = CT_AO;
     }
     else if (strcmp(sacqType, "BI") == 0) {
         acqType = BI;
+        chanType = CT_BI;
     }
     else if (strcmp(sacqType, "BO") == 0) {
         acqType = BO;
+        chanType = CT_BO;
     }
     else if (strcmp(sacqType, "COUNTER") == 0) {
         acqType = COUNTER;
+        chanType = CT_COUNTER;
     }
     else if (strcmp(sacqType, "CO") == 0) {
         acqType = CO;
+        chanType = CT_CO;
     }
     else {
         printf("### ERROR: Invalid acquisition mode\n");
@@ -2820,6 +2849,7 @@ static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, cha
             pPvt->portName, pPvt->daqMode);
         return -1;
     }
+    pPvt->chanType = (daqMxBaseChanType)chanType;
     if (Channelnr != pPvt->nChannels) {
         printf("### ERROR: Can not set same channelnr twice! and it must be in order from 0 upwards!  (expected:%d got:%d)\n", pPvt->nChannels, Channelnr);
         return -1;
@@ -2871,6 +2901,11 @@ static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, cha
         /* pPvt->nSamples = DEFAULT_NSAMPLES;*/
         pPvt->aioPvt[i]->max = DEFAULT_MAX;
         pPvt->aioPvt[i]->min = DEFAULT_MIN;
+        pPvt->aioPvt[i]->units = DAQmx_Val_Kelvins;
+        pPvt->aioPvt[i]->thermocoupleType = DAQmx_Val_K_Type_TC;
+        pPvt->aioPvt[i]->cjcSource = DAQmx_Val_ConstVal;
+        pPvt->aioPvt[i]->cjcVal = 25.0;
+        pPvt->aioPvt[i]->cjcChannel = strdup("");
         pPvt->aioPvt[i]->terminal = DAQmx_Val_Cfg_Default;
         pPvt->aioPvt[i]->data = NULL;
         pPvt->aioPvt[i]->dataSize = 0;
@@ -3238,8 +3273,8 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
 {
     int channel;
     for (channel = 0; channel < pPvt->nChannels; channel++) {
-        switch (pPvt->daqMode) {
-        case AI:
+        switch (pPvt->chanType) {
+        case CT_AI:
             if (DAQmxFailed(DAQmxBaseCreateAIVoltageChan(pPvt->taskHandle,
                 pPvt->aioPvt[channel]->devicename,
                 NULL,
@@ -3249,11 +3284,39 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
                 DAQmx_Val_Volts,
                 NULL)))
             {
-                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateAI):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateAIVoltage):");
                 pPvt->state = unconfigured;
             }
             break;
-        case AO:
+        case CT_AITC:
+            if (DAQmxFailed(DAQmxBaseCreateAIThrmcplChan(pPvt->taskHandle,
+                pPvt->aioPvt[channel]->devicename,
+                NULL,
+                pPvt->aioPvt[channel]->min,
+                pPvt->aioPvt[channel]->max,
+                pPvt->aioPvt[channel]->units,
+                pPvt->aioPvt[channel]->thermocoupleType,
+                pPvt->aioPvt[channel]->cjcSource,
+                pPvt->aioPvt[channel]->cjcVal,
+                NULL)))
+            {
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateAIThrmcpl):");
+                pPvt->state = unconfigured;
+            }
+            if (DAQmxFailed(DAQmxBaseSetAIADCTimingMode(pPvt->taskHandle, pPvt->aioPvt[channel]->devicename,
+                                                        DAQmx_Val_HighResolution)))
+            {
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (SetAIADCTimingMode):");
+                pPvt->state = unconfigured;
+            }
+            if (DAQmxFailed(DAQmxBaseSetAIAutoZeroMode(pPvt->taskHandle, pPvt->aioPvt[channel]->devicename,
+                                                       DAQmx_Val_Once)))
+            {
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (SetAIAutoZeroMode):");
+                pPvt->state = unconfigured;
+            }
+            break;
+        case CT_AO:
             if (DAQmxFailed(DAQmxBaseCreateAOVoltageChan(pPvt->taskHandle,
                 pPvt->aioPvt[channel]->devicename,
                 NULL,
@@ -3266,7 +3329,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
                 pPvt->state = unconfigured;
             }
             break;
-        case BI:
+        case CT_BI:
             if (DAQmxFailed(DAQmxBaseCreateDIChan(pPvt->taskHandle,
                 pPvt->bioPvt[channel]->devicename,
                 NULL,
@@ -3276,7 +3339,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
                 pPvt->state = unconfigured;
             }
             break;
-        case BO:
+        case CT_BO:
             if (DAQmxFailed(DAQmxBaseCreateDOChan(pPvt->taskHandle,
                 pPvt->bioPvt[channel]->devicename,
                 NULL,
@@ -3286,7 +3349,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
                 pPvt->state = unconfigured;
             }
             break;
-        case COUNTER:
+        case CT_COUNTER:
             if (pPvt->counterCI == 1) {
                 if (DAQmxFailed(DAQmxBaseCreateCIPeriodChan(pPvt->taskHandle,
                     pPvt->counterDevName, NULL,
@@ -3353,7 +3416,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
             }
 
             break;
-        case CO:
+        case CT_CO:
             if (DAQmxFailed(DAQmxBaseCreateCOPulseChanFreq(pPvt->taskHandle,
                 pPvt->counterDevName,
                 NULL,
