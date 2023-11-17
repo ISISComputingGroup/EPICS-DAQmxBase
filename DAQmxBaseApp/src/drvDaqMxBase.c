@@ -3976,7 +3976,7 @@ static void daqThread(void *param)
                 }
                 pNode = (interruptNode *)ellNext(&pNode->node);
             }
-            pasynManager->interruptEnd(pPvt->float64ArrayInterruptPvt);
+            pasynManager->interruptEnd(pPvt->float64InterruptPvt);
 
             epicsMutexUnlock(pPvt->lock);
             oldtp = tp;
