@@ -2764,7 +2764,6 @@ static int PortOptions(daqMxBasePvt *pPvt, int Channelnr, char * options)
                 strcpy(pPvt->clockSource, token);
                 asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
                     "Port %s: Clock Source = %s \n", pPvt->portName, pPvt->clockSource);
-
                 break;
             case 'D': /* Counter Duty Cycle*/
                 token++; token++;
@@ -2783,6 +2782,9 @@ static int PortOptions(daqMxBasePvt *pPvt, int Channelnr, char * options)
                 pPvt->aioPvt[Channelnr]->units = DAQmx_GetUnits(token);
                 asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
                     "Port %s: Units = %s (%d)\n", pPvt->portName, token, pPvt->aioPvt[Channelnr]->units);
+                break;
+            default:
+                printf("Port %s: invalid argument \"%s\"\n", pPvt->portName, token);
                 break;
             }
         }
