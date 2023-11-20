@@ -2651,37 +2651,37 @@ static int PortOptions(daqMxBasePvt *pPvt, int Channelnr, char * options)
         else if (epicsStrCaseCmp(token, "xx") == 0) {
 
         }
-        else if (epicsStrCaseCmp(token, "thermocoupleType") == 0) {
+        else if (epicsStrnCaseCmp(token, "thermocoupleType", strlen("thermocoupleType")) == 0) {
             token += (1 + strlen("thermocoupleType")); /* remove thermocoupleType= */
             pPvt->aioPvt[Channelnr]->thermocoupleType = DAQmx_GetThermocoupleType(token);
             asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
                 "Port %s: thermocoupleType = %s (%d)\n", pPvt->portName, token, pPvt->aioPvt[Channelnr]->thermocoupleType);
         }
-        else if (epicsStrCaseCmp(token, "cjcSource") == 0) {
+        else if (epicsStrnCaseCmp(token, "cjcSource", strlen("cjcSource")) == 0) {
             token += (1 + strlen("cjcSource")); /* remove cjcSource= */
             pPvt->aioPvt[Channelnr]->cjcSource = DAQmx_GetCJCSource(token);
             asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
                 "Port %s: cjcSource = %s (%d)\n", pPvt->portName, token, pPvt->aioPvt[Channelnr]->cjcSource);
         }
-        else if (epicsStrCaseCmp(token, "cjcChannel") == 0) {
+        else if (epicsStrnCaseCmp(token, "cjcChannel", strlen("cjcChannel")) == 0) {
             token += (1 + strlen("cjcChannel")); /* remove cjcChannel= */
             pPvt->aioPvt[Channelnr]->cjcChannel = strdup(token);
             asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
                 "Port %s: cjcChannel = %s\n", pPvt->portName, token, pPvt->aioPvt[Channelnr]->cjcChannel);
         }
-        else if (epicsStrCaseCmp(token, "cjcVal") == 0) {
+        else if (epicsStrnCaseCmp(token, "cjcVal", strlen("cjcVal")) == 0) {
             token += (1 + strlen("cjcVal")); /* remove cjcVal= */
             pPvt->aioPvt[Channelnr]->cjcVal = atof(token);
             asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
                 "Port %s: cjcVal = %f\n", pPvt->portName, pPvt->aioPvt[Channelnr]->cjcVal);
         }
-        else if (epicsStrCaseCmp(token, "AIADCTimingMode") == 0) {
+        else if (epicsStrnCaseCmp(token, "AIADCTimingMode", strlen("AIADCTimingMode")) == 0) {
             token += (1 + strlen("AIADCTimingMode")); /* remove AIADCTimingMode= */
             pPvt->aioPvt[Channelnr]->timingMode = DAQmx_GetAIADCTimingMode(token);
             asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
                 "Port %s: AIADCTimingMode = %s (%d)\n", pPvt->portName, token, pPvt->aioPvt[Channelnr]->timingMode);
         }
-        else if (epicsStrCaseCmp(token, "AIAutoZeroMode") == 0) {
+        else if (epicsStrnCaseCmp(token, "AIAutoZeroMode", strlen("AIAutoZeroMode")) == 0) {
             token += (1 + strlen("AIAutoZeroMode")); /* remove AIAutoZeroMode= */
             pPvt->aioPvt[Channelnr]->autoZeroMode = DAQmx_GetAIAutoZeroMode(token);
             asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
