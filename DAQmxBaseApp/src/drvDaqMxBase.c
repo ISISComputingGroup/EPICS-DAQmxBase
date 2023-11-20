@@ -3960,14 +3960,23 @@ static void daqThread(void *param)
                     /*asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
                       "sending IO/intr (signal=%d).\n",signal);*/
                     if (signal >= 0 && signal < pPvt->nChannels) {
+                        int i;
+                        epicsFloat64 value = *(epicsFloat64*)pPvt->aioPvt[signal]->data;
+                        if (pPvt->samplesRead > 0) {
+                            value = 0.0;
+                            for(i = 0; i<pPvt->samplesRead; ++i) {
+                                value += ((epicsFloat64*)pPvt->aioPvt[signal]->data)[i];
+                            }
+                            value /= (epicsFloat64)pPvt->samplesRead;
+                        }
                         pFloat64Interrupt->callback(pFloat64Interrupt->userPvt,
                             pFloat64Interrupt->pasynUser,
-                            *(epicsFloat64*)pPvt->aioPvt[signal]->data);
+                            value);
                     }
                 }
                 pNode = (interruptNode *)ellNext(&pNode->node);
             }
-            pasynManager->interruptEnd(pPvt->float64ArrayInterruptPvt);
+            pasynManager->interruptEnd(pPvt->float64InterruptPvt);
 
             epicsMutexUnlock(pPvt->lock);
             oldtp = tp;
