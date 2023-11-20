@@ -2954,7 +2954,7 @@ static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, cha
         pPvt->aioPvt[i]->cjcSource = DAQmx_Val_BuiltIn;
         pPvt->aioPvt[i]->cjcVal = 0.0;
         pPvt->aioPvt[i]->cjcChannel = NULL;
-        pPvt->aioPvt[i]->timingMode = DAQmx_Val_Auto;
+        pPvt->aioPvt[i]->timingMode = DAQmx_Val_Automatic;
         pPvt->aioPvt[i]->autoZeroMode = DAQmx_Val_None;
         pPvt->aioPvt[i]->terminal = DAQmx_Val_Cfg_Default;
         pPvt->aioPvt[i]->data = NULL;

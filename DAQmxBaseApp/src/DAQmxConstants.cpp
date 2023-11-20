@@ -62,7 +62,7 @@ int DAQmx_GetCJCSource(const char* cjcSource)
 }
 
 static std::map<std::string, int> g_AIADCTimingMode = {
-    { "Automatic", DAQmx_Val_Auto },
+    { "Automatic", DAQmx_Val_Automatic },
     { "HighResolution", DAQmx_Val_HighResolution }, 
     { "HighSpeed", DAQmx_Val_HighSpeed },
     { "Best50HzRejection", DAQmx_Val_Best50HzRejection },

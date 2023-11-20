@@ -11,6 +11,10 @@ extern int DAQmx_GetCJCSource(const char* cjcSource);
 extern int DAQmx_GetAIADCTimingMode(const char* mode);
 extern int DAQmx_GetAIAutoZeroMode(const char* mode);
 
+#ifndef DAQmx_Val_Automatic
+#define DAQmx_Val_Automatic 16097 // Automatic mode for DAQmx_AI_ADCTimingMode
+#endif
+
 #ifdef __cplusplus
 }
 #endif
