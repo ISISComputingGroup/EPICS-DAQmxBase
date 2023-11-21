@@ -28,6 +28,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#include <stdint.h>
 
 /******************/
 /* EPICS includes */
@@ -4215,15 +4216,23 @@ static void daqThread(void *param)
                     asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
                         "sending IO/intr (signal=%d).\n", signal);
                     if (signal >= 0 && signal < pPvt->nChannels) {
+                        int i;
+                        epicsInt32 value = *(epicsInt32*)pPvt->bioPvt[signal]->data;
+                        if (pPvt->samplesRead > 0) {
+                            int64_t tvalue = 0;
+                            for(i = 0; i<pPvt->samplesRead; ++i) {
+                                tvalue += ((epicsInt32*)pPvt->aioPvt[signal]->data)[i];
+                            }
+                            value = (epicsInt32)(tvalue / pPvt->samplesRead);
+                        }
                         pInt32Interrupt->callback(pInt32Interrupt->userPvt,
                             pInt32Interrupt->pasynUser,
-                            *(epicsInt32*)pPvt->bioPvt[signal]->data);
+                            value);
                     }
                 }
                 pNode = (interruptNode *)ellNext(&pNode->node);
             }
             pasynManager->interruptEnd(pPvt->int32InterruptPvt);
-
 
             epicsMutexUnlock(pPvt->lock);
             oldtp = tp;
