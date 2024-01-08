@@ -32,8 +32,8 @@ DBD += DAQmxBaseSupport.dbd DAQmxSupport.dbd
 
 # The following are compiled and added to the support library
 
-DAQmxBaseSupport_SRCS += drvDaqMxBase.c
-DAQmxSupport_SRCS += drvDaqMx.c
+DAQmxBaseSupport_SRCS += drvDaqMxBase.c DAQmxConstants.cpp
+DAQmxSupport_SRCS += drvDaqMx.c DAQmxConstants.cpp
 
 # We need to link against the EPICS Base libraries
 DAQmxBaseSupport_LIBS += asyn $(EPICS_BASE_IOC_LIBS)
@@ -41,6 +41,7 @@ DAQmxSupport_LIBS += asyn $(EPICS_BASE_IOC_LIBS)
 
 USR_CFLAGS_Linux += -Wno-comments
 USR_CFLAGS_WIN32 += -D_USE_MATH_DEFINES -DWIN32 -DDllExport=__declspec(dllimport)
+USR_CXXFLAGS_WIN32 += -DNOMINMAX -DDODAQMXFULL=1 -I$(ICPBINARYDIR)/NIDAQmx/include
 
 DAQmxBaseSupport_SYS_LIBS_WIN32 += $(DAQMXBASELIB)/NIDAQmxBase
 DAQmxSupport_SYS_LIBS_WIN32 += $(DAQMXLIB)/NIDAQmx 

@@ -28,6 +28,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#include <stdint.h>
 
 /******************/
 /* EPICS includes */
@@ -65,6 +66,8 @@
 #define MXBASE "DAQmx"
 #include <NIDAQmx.h>
 
+#include "DAQmxConstants.h"
+
 // this is the only function we define that gets a non-static version created by the epeics export process, hence must be unique 
 #define DAQmxBaseRegistrar DAQmxRegistrar
 
@@ -75,6 +78,7 @@
 #define DAQmxBaseStopTask DAQmxStopTask
 #define DAQmxBaseClearTask DAQmxClearTask
 #define DAQmxBaseCreateAIVoltageChan DAQmxCreateAIVoltageChan
+#define DAQmxBaseCreateAIThrmcplChan DAQmxCreateAIThrmcplChan
 #define DAQmxBaseCreateAOVoltageChan DAQmxCreateAOVoltageChan
 #define DAQmxBaseCreateDIChan DAQmxCreateDIChan
 #define DAQmxBaseCreateDOChan DAQmxCreateDOChan
@@ -99,6 +103,8 @@
 #define DAQmxBaseReadCounterU32 DAQmxReadCounterU32
 #define DAQmxBaseWriteAnalogF64 DAQmxWriteAnalogF64
 #define DAQmxBaseWriteDigitalU32 DAQmxWriteDigitalU32
+#define DAQmxBaseSetAIAutoZeroMode DAQmxSetAIAutoZeroMode
+#define DAQmxBaseSetAIADCTimingMode DAQmxSetAIADCTimingMode
 #endif
 
 // Construct names for the IOCSH commands
@@ -263,6 +269,16 @@ typedef enum {
 } daqMxBaseAcqMode;
 
 typedef enum {
+    CT_AI = 1,
+    CT_AITC,
+    CT_AO,
+    CT_BI,
+    CT_BO,
+    CT_COUNTER,
+    CT_CO
+} daqMxBaseChanType;
+
+typedef enum {
     Digital, Analog
 } daqMxTriggerType;
 
@@ -283,6 +299,13 @@ typedef struct daqAioPvt {
     epicsFloat64 avgData;
     epicsFloat64 min;
     epicsFloat64 max;
+    epicsInt32 units;
+    epicsInt32 thermocoupleType;
+    epicsInt32 cjcSource;
+    epicsFloat64 cjcVal;
+    const char* cjcChannel;
+    epicsInt32 timingMode;
+    epicsInt32 autoZeroMode;
     epicsInt32  terminal;
 } daqAioPvt;
 
@@ -305,6 +328,7 @@ typedef struct daqCiPvt {
 typedef struct daqMxBasePvt {
     ELLNODE node;
     daqMxBaseAcqMode daqMode;
+    daqMxBaseChanType chanType;
     daqMxBaseTriggerMode trigMode;
     char monstermode;
     TaskHandle taskHandle;
@@ -2628,6 +2652,42 @@ static int PortOptions(daqMxBasePvt *pPvt, int Channelnr, char * options)
         else if (epicsStrCaseCmp(token, "xx") == 0) {
 
         }
+        else if (epicsStrnCaseCmp(token, "thermocoupleType", strlen("thermocoupleType")) == 0) {
+            token += (1 + strlen("thermocoupleType")); /* remove thermocoupleType= */
+            pPvt->aioPvt[Channelnr]->thermocoupleType = DAQmx_GetThermocoupleType(token);
+            asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
+                "Port %s: thermocoupleType = %s (%d)\n", pPvt->portName, token, pPvt->aioPvt[Channelnr]->thermocoupleType);
+        }
+        else if (epicsStrnCaseCmp(token, "cjcSource", strlen("cjcSource")) == 0) {
+            token += (1 + strlen("cjcSource")); /* remove cjcSource= */
+            pPvt->aioPvt[Channelnr]->cjcSource = DAQmx_GetCJCSource(token);
+            asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
+                "Port %s: cjcSource = %s (%d)\n", pPvt->portName, token, pPvt->aioPvt[Channelnr]->cjcSource);
+        }
+        else if (epicsStrnCaseCmp(token, "cjcChannel", strlen("cjcChannel")) == 0) {
+            token += (1 + strlen("cjcChannel")); /* remove cjcChannel= */
+            pPvt->aioPvt[Channelnr]->cjcChannel = strdup(token);
+            asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
+                "Port %s: cjcChannel = %s\n", pPvt->portName, token, pPvt->aioPvt[Channelnr]->cjcChannel);
+        }
+        else if (epicsStrnCaseCmp(token, "cjcVal", strlen("cjcVal")) == 0) {
+            token += (1 + strlen("cjcVal")); /* remove cjcVal= */
+            pPvt->aioPvt[Channelnr]->cjcVal = atof(token);
+            asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
+                "Port %s: cjcVal = %f\n", pPvt->portName, pPvt->aioPvt[Channelnr]->cjcVal);
+        }
+        else if (epicsStrnCaseCmp(token, "AIADCTimingMode", strlen("AIADCTimingMode")) == 0) {
+            token += (1 + strlen("AIADCTimingMode")); /* remove AIADCTimingMode= */
+            pPvt->aioPvt[Channelnr]->timingMode = DAQmx_GetAIADCTimingMode(token);
+            asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
+                "Port %s: AIADCTimingMode = %s (%d)\n", pPvt->portName, token, pPvt->aioPvt[Channelnr]->timingMode);
+        }
+        else if (epicsStrnCaseCmp(token, "AIAutoZeroMode", strlen("AIAutoZeroMode")) == 0) {
+            token += (1 + strlen("AIAutoZeroMode")); /* remove AIAutoZeroMode= */
+            pPvt->aioPvt[Channelnr]->autoZeroMode = DAQmx_GetAIAutoZeroMode(token);
+            asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
+                "Port %s: AIAutoZeroMode = %s (%d)\n", pPvt->portName, token, pPvt->aioPvt[Channelnr]->autoZeroMode);
+        }
         else {
             switch (*token) {
             case 'm': /*min*/
@@ -2705,7 +2765,6 @@ static int PortOptions(daqMxBasePvt *pPvt, int Channelnr, char * options)
                 strcpy(pPvt->clockSource, token);
                 asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
                     "Port %s: Clock Source = %s \n", pPvt->portName, pPvt->clockSource);
-
                 break;
             case 'D': /* Counter Duty Cycle*/
                 token++; token++;
@@ -2718,6 +2777,15 @@ static int PortOptions(daqMxBasePvt *pPvt, int Channelnr, char * options)
                 pPvt->counterDelay = (epicsFloat64)atof(token);
                 asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
                     "Port %s: (Counter) Delay = %.3f \n", pPvt->portName, pPvt->counterDelay);
+                break;
+            case 'U': /* units */
+                token++; token++;
+                pPvt->aioPvt[Channelnr]->units = DAQmx_GetUnits(token);
+                asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
+                    "Port %s: Units = %s (%d)\n", pPvt->portName, token, pPvt->aioPvt[Channelnr]->units);
+                break;
+            default:
+                printf("Port %s: invalid argument \"%s\"\n", pPvt->portName, token);
                 break;
             }
         }
@@ -2762,7 +2830,7 @@ static void DAQmxPortOptions(char * portName, int Channelnr, char * options)
 
 static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, char * sacqType, char* options)
 {
-    int acqType;
+    int acqType, chanType;
     daqMxBasePvt * pPvt;
     int stringLength, i;
     char * tmpStrName;
@@ -2771,21 +2839,31 @@ static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, cha
     /* Find acqType */
     if (strcmp(sacqType, "AI") == 0) {
         acqType = AI;
+        chanType = CT_AI;
+    }
+    if (strcmp(sacqType, "AITC") == 0) {
+        acqType = AI;
+        chanType = CT_AITC;
     }
     else if (strcmp(sacqType, "AO") == 0) {
         acqType = AO;
+        chanType = CT_AO;
     }
     else if (strcmp(sacqType, "BI") == 0) {
         acqType = BI;
+        chanType = CT_BI;
     }
     else if (strcmp(sacqType, "BO") == 0) {
         acqType = BO;
+        chanType = CT_BO;
     }
     else if (strcmp(sacqType, "COUNTER") == 0) {
         acqType = COUNTER;
+        chanType = CT_COUNTER;
     }
     else if (strcmp(sacqType, "CO") == 0) {
         acqType = CO;
+        chanType = CT_CO;
     }
     else {
         printf("### ERROR: Invalid acquisition mode\n");
@@ -2820,6 +2898,7 @@ static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, cha
             pPvt->portName, pPvt->daqMode);
         return -1;
     }
+    pPvt->chanType = (daqMxBaseChanType)chanType;
     if (Channelnr != pPvt->nChannels) {
         printf("### ERROR: Can not set same channelnr twice! and it must be in order from 0 upwards!  (expected:%d got:%d)\n", pPvt->nChannels, Channelnr);
         return -1;
@@ -2871,6 +2950,13 @@ static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, cha
         /* pPvt->nSamples = DEFAULT_NSAMPLES;*/
         pPvt->aioPvt[i]->max = DEFAULT_MAX;
         pPvt->aioPvt[i]->min = DEFAULT_MIN;
+        pPvt->aioPvt[i]->units = DAQmx_Val_Kelvins;
+        pPvt->aioPvt[i]->thermocoupleType = DAQmx_Val_K_Type_TC;
+        pPvt->aioPvt[i]->cjcSource = DAQmx_Val_BuiltIn;
+        pPvt->aioPvt[i]->cjcVal = 0.0;
+        pPvt->aioPvt[i]->cjcChannel = NULL;
+        pPvt->aioPvt[i]->timingMode = DAQmx_Val_Automatic;
+        pPvt->aioPvt[i]->autoZeroMode = DAQmx_Val_None;
         pPvt->aioPvt[i]->terminal = DAQmx_Val_Cfg_Default;
         pPvt->aioPvt[i]->data = NULL;
         pPvt->aioPvt[i]->dataSize = 0;
@@ -3238,8 +3324,8 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
 {
     int channel;
     for (channel = 0; channel < pPvt->nChannels; channel++) {
-        switch (pPvt->daqMode) {
-        case AI:
+        switch (pPvt->chanType) {
+        case CT_AI:
             if (DAQmxFailed(DAQmxBaseCreateAIVoltageChan(pPvt->taskHandle,
                 pPvt->aioPvt[channel]->devicename,
                 NULL,
@@ -3249,11 +3335,39 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
                 DAQmx_Val_Volts,
                 NULL)))
             {
-                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateAI):");
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateAIVoltage):");
                 pPvt->state = unconfigured;
             }
             break;
-        case AO:
+        case CT_AITC:
+            if (DAQmxFailed(DAQmxBaseCreateAIThrmcplChan(pPvt->taskHandle,
+                pPvt->aioPvt[channel]->devicename,
+                NULL,
+                pPvt->aioPvt[channel]->min,
+                pPvt->aioPvt[channel]->max,
+                pPvt->aioPvt[channel]->units,
+                pPvt->aioPvt[channel]->thermocoupleType,
+                pPvt->aioPvt[channel]->cjcSource,
+                pPvt->aioPvt[channel]->cjcVal,
+                pPvt->aioPvt[channel]->cjcChannel)))
+            {
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateAIThrmcpl):");
+                pPvt->state = unconfigured;
+            }
+            if (DAQmxFailed(DAQmxBaseSetAIADCTimingMode(pPvt->taskHandle, pPvt->aioPvt[channel]->devicename,
+                                                        pPvt->aioPvt[channel]->timingMode)))
+            {
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (SetAIADCTimingMode):");
+                pPvt->state = unconfigured;
+            }
+            if (DAQmxFailed(DAQmxBaseSetAIAutoZeroMode(pPvt->taskHandle, pPvt->aioPvt[channel]->devicename,
+                                                       pPvt->aioPvt[channel]->autoZeroMode)))
+            {
+                fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (SetAIAutoZeroMode):");
+                pPvt->state = unconfigured;
+            }
+            break;
+        case CT_AO:
             if (DAQmxFailed(DAQmxBaseCreateAOVoltageChan(pPvt->taskHandle,
                 pPvt->aioPvt[channel]->devicename,
                 NULL,
@@ -3266,7 +3380,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
                 pPvt->state = unconfigured;
             }
             break;
-        case BI:
+        case CT_BI:
             if (DAQmxFailed(DAQmxBaseCreateDIChan(pPvt->taskHandle,
                 pPvt->bioPvt[channel]->devicename,
                 NULL,
@@ -3276,7 +3390,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
                 pPvt->state = unconfigured;
             }
             break;
-        case BO:
+        case CT_BO:
             if (DAQmxFailed(DAQmxBaseCreateDOChan(pPvt->taskHandle,
                 pPvt->bioPvt[channel]->devicename,
                 NULL,
@@ -3286,7 +3400,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
                 pPvt->state = unconfigured;
             }
             break;
-        case COUNTER:
+        case CT_COUNTER:
             if (pPvt->counterCI == 1) {
                 if (DAQmxFailed(DAQmxBaseCreateCIPeriodChan(pPvt->taskHandle,
                     pPvt->counterDevName, NULL,
@@ -3353,7 +3467,7 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
             }
 
             break;
-        case CO:
+        case CT_CO:
             if (DAQmxFailed(DAQmxBaseCreateCOPulseChanFreq(pPvt->taskHandle,
                 pPvt->counterDevName,
                 NULL,
@@ -4102,15 +4216,23 @@ static void daqThread(void *param)
                     asynPrint(pPvt->pasynUser, ASYN_TRACE_FLOW,
                         "sending IO/intr (signal=%d).\n", signal);
                     if (signal >= 0 && signal < pPvt->nChannels) {
+                        int i;
+                        epicsInt32 value = *(epicsInt32*)pPvt->bioPvt[signal]->data;
+                        if (pPvt->samplesRead > 0) {
+                            int64_t tvalue = 0;
+                            for(i = 0; i<pPvt->samplesRead; ++i) {
+                                tvalue += ((epicsInt32*)pPvt->aioPvt[signal]->data)[i];
+                            }
+                            value = (epicsInt32)(tvalue / pPvt->samplesRead);
+                        }
                         pInt32Interrupt->callback(pInt32Interrupt->userPvt,
                             pInt32Interrupt->pasynUser,
-                            *(epicsInt32*)pPvt->bioPvt[signal]->data);
+                            value);
                     }
                 }
                 pNode = (interruptNode *)ellNext(&pNode->node);
             }
             pasynManager->interruptEnd(pPvt->int32InterruptPvt);
-
 
             epicsMutexUnlock(pPvt->lock);
             oldtp = tp;
