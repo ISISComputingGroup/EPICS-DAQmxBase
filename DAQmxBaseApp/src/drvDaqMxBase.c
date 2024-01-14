@@ -2841,7 +2841,7 @@ static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, cha
         acqType = AI;
         chanType = CT_AI;
     }
-    if (strcmp(sacqType, "AITC") == 0) {
+    else if (strcmp(sacqType, "AITC") == 0) {
         acqType = AI;
         chanType = CT_AITC;
     }
