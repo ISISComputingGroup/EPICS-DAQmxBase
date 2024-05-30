@@ -3354,14 +3354,14 @@ static void ConfigureChannels(daqMxBasePvt * pPvt)
                 fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (CreateAIThrmcpl):");
                 pPvt->state = unconfigured;
             }
-            if (DAQmxFailed(DAQmxBaseSetAIADCTimingMode(pPvt->taskHandle, pPvt->aioPvt[channel]->devicename,
-                                                        pPvt->aioPvt[channel]->timingMode)))
+            if ((pPvt->state != unconfigured) && (DAQmxFailed(DAQmxBaseSetAIADCTimingMode(pPvt->taskHandle, pPvt->aioPvt[channel]->devicename,
+                                                        pPvt->aioPvt[channel]->timingMode))))
             {
                 fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (SetAIADCTimingMode):");
                 pPvt->state = unconfigured;
             }
-            if (DAQmxFailed(DAQmxBaseSetAIAutoZeroMode(pPvt->taskHandle, pPvt->aioPvt[channel]->devicename,
-                                                       pPvt->aioPvt[channel]->autoZeroMode)))
+            if ((pPvt->state != unconfigured) && (DAQmxFailed(DAQmxBaseSetAIAutoZeroMode(pPvt->taskHandle, pPvt->aioPvt[channel]->devicename,
+                                                       pPvt->aioPvt[channel]->autoZeroMode))))
             {
                 fetchAndPrintDAQError(pPvt, "### DAQmx ERROR (SetAIAutoZeroMode):");
                 pPvt->state = unconfigured;
