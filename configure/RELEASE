@@ -44,5 +44,7 @@ ASYN=$(SUPPORT)/asyn/master
 -include $(TOP)/../RELEASE.local
 -include $(TOP)/configure/RELEASE.local
 
+# if you are not building at STFC ISIS you can delete
+# these next two lines
 include $(TOP)/../../../ISIS_CONFIG
 -include $(TOP)/../../../ISIS_CONFIG.$(EPICS_HOST_ARCH)
