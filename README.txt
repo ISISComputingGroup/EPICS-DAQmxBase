@@ -1,5 +1,7 @@
 Original code from http://sourceforge.net/p/epics/svn/HEAD/tree/applications/trunk/DAQmxBase/
 
+The original documentation for this module is posted at https://isiscomputinggroup.github.io/EPICS-DAQmxBase/
+
 Local modifications to:
 - Build on Windows
 - Build against NI-DAQmx as well as NI-DAQmxBase
@@ -11,3 +13,4 @@ the function namaes may still have "Base" in them for historic reasons.
 
 NI-DAQmx is available from
 https://www.ni.com/en/support/downloads/drivers/download.ni-daq-mx.html
+
