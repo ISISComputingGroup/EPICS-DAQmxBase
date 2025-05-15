@@ -4,6 +4,10 @@ Local modifications to:
 - Build on Windows
 - Build against NI-DAQmx as well as NI-DAQmxBase
 
-The Makefile as is will try to build separate libraries each linked against either 
-NI-DAQmxBase or NI-DAQmx; you probably don't want (or have) both installed, so 
-comment out as appropriate.
+The Makefile can build separate libraries each linked against either 
+DAQmx or DAQmxBase. However DAQmxBase is deprecated as full DAQmx is now
+available for Linux, so it builds only against DAQmx but many of
+the function namaes may still have "Base" in them for historic reasons.
+
+NI-DAQmx is available from
+https://www.ni.com/en/support/downloads/drivers/download.ni-daq-mx.html
