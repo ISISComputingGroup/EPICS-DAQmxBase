@@ -14,3 +14,4 @@ runIOC.sh
 relPaths.sh
 .project
 dllCopy.bat
+.iocsh_history

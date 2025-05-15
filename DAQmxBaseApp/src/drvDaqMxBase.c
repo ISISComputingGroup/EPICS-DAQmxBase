@@ -514,18 +514,18 @@ static asynStatus drvUserGetType(void *drvPvt, asynUser *pasynUser,
 static asynStatus drvUserDestroy(void *drvPvt, asynUser *pasynUser);
 
 /* Private driver routines */
-void daqThread(void *param);
+static void daqThread(void *param);
 static asynStatus dmbWrite(void *drvPvt, asynUser *pasynUser,
     epicsInt32 ivalue, epicsFloat64 dvalue);
 static asynStatus dmbRead(void *drvPvt, asynUser *pasynUser,
     epicsInt32 *pivalue, epicsFloat64 *pfvalue);
 
 static asynStatus allocBuffers(daqMxBasePvt *pPvt, asynUser *pasynUser);
-daqMxBasePvt *getAsynPort(char *portName);
+static daqMxBasePvt *getAsynPort(char *portName);
 
 
 /* IOC shell command function prototypes */
-int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, char* sacqType, char* options);
+static int DAQmxBaseConfig(char *portName, char * deviceName, int Channelnr, char* sacqType, char* options);
 
 /*****************************************************/
 /* Asyn interface Structures                        */
@@ -1584,7 +1584,7 @@ static void DAQmxGen(char * portName, int Channelnr, char * params)
     }
     if (!PrevGenPort)
     {
-        PrevGenPort = (char*)malloc(strlen(portName));
+        PrevGenPort = (char*)malloc(strlen(portName) + 1);
         strcpy(PrevGenPort, portName);
     }
     PrevGenChan = Channelnr;
