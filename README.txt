@@ -14,4 +14,4 @@ the function namaes may still have "Base" in them for historic reasons.
 NI-DAQmx is available from
 https://www.ni.com/en/support/downloads/drivers/download.ni-daq-mx.html
 
-Original example st.cmd files are in https://github.com/ISISComputingGroup/EPICS-DAQmxBase/tree/master/iocBoot/iocDAQmxBase
+Example st.cmd files are in https://github.com/ISISComputingGroup/EPICS-DAQmxBase/tree/master/iocBoot/iocDAQmxBase though if you find the referenced Db files have been changed too much check the original import via https://github.com/ISISComputingGroup/EPICS-DAQmxBase/tree/vendor 
