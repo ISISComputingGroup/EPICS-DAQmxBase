@@ -36,6 +36,19 @@ EPICS_BASE = C:/Instrument/Apps/EPICS/base/master
 # EPICS asyn module
 ASYN=$(SUPPORT)/asyn/master
 
+## For STFC ISIS - comment out  definition of ISIS_DAQMX if not building there
+ISIS_DAQMX=1
+
+ifdef ISIS_DAQMX
+ICPCONFIG=$(SUPPORT)/icpconfig/master
+LIBJSON=$(SUPPORT)/libjson/master
+ONCRPC=$(SUPPORT)/oncrpc/master
+PCRE=$(SUPPORT)/pcre/master
+PUGIXML=$(SUPPORT)/pugixml/master
+UTILITIES=$(SUPPORT)/utilities/master
+ZLIB=$(SUPPORT)/zlib/master
+endif
+
 # optional extra local definitions here
 -include $(TOP)/configure/RELEASE.private
 
@@ -44,7 +57,7 @@ ASYN=$(SUPPORT)/asyn/master
 -include $(TOP)/../RELEASE.local
 -include $(TOP)/configure/RELEASE.local
 
-# if you are not building at STFC ISIS you can delete
-# these next two lines
+ifdef ISIS_DAQMX
 include $(TOP)/../../../ISIS_CONFIG
 -include $(TOP)/../../../ISIS_CONFIG.$(EPICS_HOST_ARCH)
+endif

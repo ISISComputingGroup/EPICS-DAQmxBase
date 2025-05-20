@@ -75,6 +75,11 @@ DAQmx_DBD += base.dbd
 DAQmx_DBD += DAQmxSupport.dbd
 DAQmx_DBD += asyn.dbd
 
+ifdef ISIS_DAQMX
+DAQmx_DBD += icpconfig.dbd
+DAQmx_DBD += utilities.dbd
+endif
+
 # DAQmxBase_registerRecordDeviceDriver.cpp will be created
 # DAQmxBase.dbd
 DAQmxBase_SRCS += DAQmxBase_registerRecordDeviceDriver.cpp
@@ -101,6 +106,11 @@ DAQmxBase_LIBS += asyn
 
 DAQmx_LIBS += DAQmxSupport
 DAQmx_LIBS += asyn
+
+ifdef ISIS_DAQMX
+DAQmx_LIBS += icpconfig pugixml
+DAQmx_LIBS += utilities pcrecpp pcre libjson zlib
+endif
 
 # We need to link this IOC Application against the EPICS Base libraries
 DAQmxBase_LIBS += $(EPICS_BASE_IOC_LIBS)

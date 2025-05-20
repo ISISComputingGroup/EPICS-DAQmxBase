@@ -17,3 +17,5 @@ NI-DAQmx library is available from
 https://www.ni.com/en/support/downloads/drivers/download.ni-daq-mx.html You only need this and EPICS ASYN module to build the driver
 
 Example st.cmd files are in https://github.com/ISISComputingGroup/EPICS-DAQmxBase/tree/master/iocBoot/iocDAQmxBase though if you find the referenced Db files have been changed too much by us check the original imported versions via https://github.com/ISISComputingGroup/EPICS-DAQmxBase/tree/vendor 
+
+To build outside of STFC ISIS look in configure/RELEASE and comment out the line setting `ISIS_DAQMX`
