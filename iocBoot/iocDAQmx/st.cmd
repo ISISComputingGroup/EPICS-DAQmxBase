@@ -11,6 +11,9 @@ cd "${TOP}"
 dbLoadDatabase "dbd/DAQmx.dbd"
 DAQmx_registerRecordDeviceDriver pdbbase
 
+## local STFC ISIS startup
+< $(IOCSTARTUP)/init.cmd
+
 ## NI cDAQ-9181 with NI 9375 card
 
 epicsEnvSet("DAQ","cDAQ1Mod3")
